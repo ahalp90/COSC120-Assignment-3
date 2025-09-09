@@ -43,17 +43,59 @@ public enum Filter {
      * @return true if Filter value allows multiple selections.
      */
     public boolean allowsMultipleChoices() {
-        case TYPE -> false;
-        case BUN -> false;
-        case PROTEIN -> true;
-        case CHEESE -> false;
-        case PICKLES -> false;
-        case CUCUMBER -> false;
-        case TOMATO -> false;
-        case DRESSING -> false;
-        case LEAFY_GREENS -> true;
-        case SAUCE_S -> true;
+        return switch (this) {
+            case TYPE -> false;
+            case BUN -> false;
+            case PROTEIN -> true;
+            case CHEESE -> false;
+            case PICKLES -> false;
+            case CUCUMBER -> false;
+            case TOMATO -> false;
+            case DRESSING -> false;
+            case LEAFY_GREENS -> true;
+            case SAUCE_S -> true;
+        };
     }
+
+    /**
+     * Identifies filter values that allow a selection of 'None'--i.e. I don't want anything at all from this category.
+     * @return true if Filter value allows requesting 'none' selection for this category.
+     */
+    public boolean allowsNoneChoice() {
+        return switch (this) {
+            case TYPE -> false;
+            case BUN -> false;
+            case PROTEIN -> true;
+            case CHEESE -> false;
+            case PICKLES -> false;
+            case CUCUMBER -> false;
+            case TOMATO -> false;
+            case DRESSING -> false;
+            case LEAFY_GREENS -> true;
+            case SAUCE_S -> true;
+        };
+    }
+
+    /**
+     * Identifies filter values that allow users to 'skip' filtering by this attribute--i.e. 'I don't mind which'.
+     * @return boolean true if allows skipping because 'I don't mind which'.
+     */
+    public boolean allowsDontCareChoice() {
+        return switch (this) {
+            case TYPE -> false;
+            case BUN -> true;
+            case PROTEIN -> true;
+            case CHEESE -> true;
+            case PICKLES -> false;
+            case CUCUMBER -> false;
+            case TOMATO -> false;
+            case DRESSING -> true;
+            case LEAFY_GREENS -> false;
+            case SAUCE_S -> false;
+        };
+    }
+
+
 
 
 
