@@ -71,13 +71,10 @@ public class OrderGui implements OrderingSystemListener {
     }
 
     private JPanel makeMainBurgerFilterPanel() {
-//        int MAIN_BURGER_FILTER_PANEL_ROWS = 10;
-//        int MAIN_BURGER_FILTER_PANEL_COLS = 6;
-//        int SIDE_BANNER_COLS = 2;
-
         //MAIN PANEL TO BE RETURNED (just 4 columns & small h/v-gap)
         //TODO: THIS HAS TO BE GRIDBAGLAYOUT FOR PROPORTIONATE X-WEIGHTING**********************************************
-        JPanel mainBurgerFilterPanel = new JPanel(new GridLayout(1, 4, 5, 5));
+//        JPanel mainBurgerFilterPanel = new JPanel(new GridLayout(1, 4, 5, 5));
+        JPanel mainBurgerFilterPanel = new JPanel(new GridBagLayout());
         mainBurgerFilterPanel.setPreferredSize(GUI_PREFERRED_SIZE);
 
         // SIDE BANNER - ALWAYS VISIBLE
@@ -95,90 +92,110 @@ public class OrderGui implements OrderingSystemListener {
             }
         };
 
+        JPanel filterSelectorsPanel = filterSelectorsPanel();
 
         //ADD SUB-COMPONENTS TO MAIN PANEL TO BE RETURNED
-        mainBurgerFilterPanel.add(sideBanner); //Add first to go in first of 4 columns.
+        GridBagConstraints gbc = new GridBagConstraints();
+        //layout constants
+        gbc.gridy = 0; gbc.weighty = 1.0; gbc.gridheight = 1; gbc.fill = GridBagConstraints.BOTH;
+        double
+
 
         return mainBurgerFilterPanel;
     }
 
     private JPanel filterSelectorsPanel() {
-        /**
-         * THIS NEEDS TO FILTER FOR:
-         * BURGER ONLY: BUN, SAUCE_S
-         * SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
-         * BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
-         *
-         * I DON'T MIND SELECTORS: BUN, SAUCE_S,LEAFY_GREENS, CUCUMBER, DRESSING, PROTEIN, TOMATO
-         * ALLOWS EXPLICIT 'NONE' SELECTION: TOMATO, CUCUMBER, PICKLES, SAUCES, PROTEINS AND LEAFY_GREENS
+        /*
+         THIS NEEDS TO FILTER FOR:
+         BURGER ONLY: BUN, SAUCE_S
+         SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
+         BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
+
+         I DON'T MIND SELECTORS: BUN, SAUCE_S,LEAFY_GREENS, CUCUMBER, DRESSING, PROTEIN, TOMATO
+         ALLOWS EXPLICIT 'NONE' SELECTION: TOMATO, CUCUMBER, PICKLES, SAUCES, PROTEINS AND LEAFY_GREENS
          */
 
-
         // MAIN PANEL TO BE RETURNED
-        JPanel localParentPanel = new JPanel (new GridLayout(1, 4)); //Arranges the side banner and main filter selection area.
+        JPanel localParentPanel = new JPanel (new GridBagLayout());
         localParentPanel.setPreferredSize(GUI_PREFERRED_SIZE);
+
+        JPanel sharedFiltersPanel = makeSharedFiltersPanel();
+        JPanel burgerFiltersPanel = makeBurgerFiltersPanel();
+        JPanel saladFiltersPanel = makeSaladFiltersPanel();
 
         //INNER-WRAPPER JPANEL W/ CARDLAYOUT TO SWITCH BURGER & SALAD VIEWS
         CardLayout cardLayout = new CardLayout();
-        JPanel filterCardsPanel = new JPanel(cardLayout);
-
-        JPanel sharedFiltersPanel = makeSharedFiltersPanel();
-
-
-
-
-        //                  *** BURGER ONLY SELECTORS ***
-        // BUN PROMPT AND SELECTOR
-        JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
-
-
+        JPanel typeSpecificFilterCardsPanel = new JPanel(cardLayout);
+        typeSpecificFilterCardsPanel.add(burgerFiltersPanel, "burgerFilters");
+        typeSpecificFilterCardsPanel.add(saladFiltersPanel, "saladFilters");
 
         // TYPE PROMPT AND SELECTOR -- TYPE SELECTION GOVERNS CARD DISPLAY (BUN/SALAD PANELS)
         JPanel typeFilterPanel = new JPanel(new BorderLayout());
         JLabel itemTypePromptLabel = new JLabel(Filter.TYPE.filterPrompt());
-        JComboBox<Type> menuItemTypeSelector = new JComboBox<>(Type.values());
-        menuItemTypeSelector.addActionListener(e -> {
-            Type selectedType = (Type) menuItemTypeSelector.getSelectedItem();
+        JComboBox<Type> itemTypeSelector = new JComboBox<>(Type.values());
+        itemTypeSelector.addActionListener(e -> {
+            Type selectedType = (Type) itemTypeSelector.getSelectedItem();
             //This could be simplified, but the explicit cases for both types makes it easier to add new types in future.
             if (selectedType == Type.BURGER) {
-//                cardLayout.show
-//                bunSelector.enabled(true); bunPromptLabel.setEnabled(true);
-//                sauceSelector.enabled(true); sauceSelectorLabel.setEnabled(true);
-//                greensSelector.enabled(false); greensSelector.setVisible(false); greensSelectorLabel.setEnabled(false);
-//                cucumberSelector.enabled(false); cucumberSelector.setVisible(false);
-//                dressingSelector.enabled(false);
-//                //pickles, tomato, protein and price are not strictly necessary, as they're shared,
-//                //but would help future developers.
-//                picklesSelector.enabled(true); picklesPromptLabel.setEnabled(true);
-//                tomatoSelector.enabled(true); tomatoPromptLabel.setEnabled(true);
-//                proteinSelector.enabled(true); proteinPromptLabel.setEnabled(true);
-//                //TODO price selectors both fields
+                cardLayout.show(typeSpecificFilterCardsPanel, "burgerFilters");
             } else if (selectedType == Type.SALAD) {
-//                bunSelector.enabled(false); bunPromptLabel.setEnabled(false);
-//                sauceSelector.enabled(true);
-//                greensSelector.enabled(true);
-//                cucumberSelector.enabled(false);
-//                dressingSelector.enabled(true);
-//                picklesSelector.enabled(true);
-//                tomatoSelector.enabled(true);
-//                proteinSelector.enabled(true); proteinPromptLabel.setEnabled(true);
-//                //TODO price selectors both fields
+                cardLayout.show(typeSpecificFilterCardsPanel, "saladFilters");
             }
         });
-
-        // Compose the panel to return
-        typeFilterPanel.add(itemTypePromptLabel, BorderLayout.NORTH);
-
-//        CardLayout conditionalFiltersCards = new CardLayout();
-//        JPanel conditionalFiltersCardsPanel = new JPanel(conditionalFiltersCards);
+        //Compose typeFilterPanel layout
+        typeFilterPanel.add(itemTypePromptLabel, BorderLayout.WEST);
+        typeFilterPanel.add(itemTypeSelector, BorderLayout.CENTER);
 
 
+        //                  *** COMPOSE THE PANEL TO RETURN ***
+        //local constants for gbc values
+        double typeWeightY = 0.1;
+        double typeSpecificFilterCardsPanelWeightY = 0.4;
+        double sharedFiltersPanelWeightY = 0.4;
+        int verticalGluePanelsNo = 2;
+        // Share remaining vertical space adding up to 1.0
+        double verticalGlueWeightY =
+                ((1 -  typeWeightY -  typeSpecificFilterCardsPanelWeightY - sharedFiltersPanelWeightY)
+                        / verticalGluePanelsNo);
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        //All components at gridx with weightx 1.0, as this is a 1 column layout. All fill in both directions.
+        gbc.gridx = 0; gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
 
+        //Heights are weight*100 due to the small size of the glue.
+        //FILTER PANEL
+        gbc.gridy = 0;
+        gbc.gridheight = (int) (typeWeightY * 100);
+        gbc.weighty = typeWeightY;
+        localParentPanel.add(typeFilterPanel, gbc);
+        //VERT GLUE #1
+        gbc.gridy = (int) (typeWeightY * 100);
+        gbc.gridheight = (int) (verticalGlueWeightY * 100);
+        gbc.weighty = verticalGlueWeightY;
+        localParentPanel.add(Box.createVerticalGlue(), gbc);
+        //TYPE-SPECIFIC PANEL
+        gbc.gridy = (int) ((typeWeightY + verticalGlueWeightY)* 100);
+        gbc.gridheight = (int) (typeSpecificFilterCardsPanelWeightY * 100);
+        gbc.weighty = typeSpecificFilterCardsPanelWeightY;
+        localParentPanel.add(typeSpecificFilterCardsPanel, gbc);
+        //VERT GLUE #2
+        gbc.gridy = (int) ((typeWeightY + verticalGlueWeightY + typeSpecificFilterCardsPanelWeightY) * 100);
+        gbc.gridheight = (int) (verticalGlueWeightY * 100);
+        gbc.weighty = verticalGlueWeightY;
+        localParentPanel.add(Box.createVerticalGlue(), gbc);
+        //SHARED FILTERS PANEL
+        gbc.gridy = (int) (int) ((typeWeightY + (verticalGlueWeightY*2) + typeSpecificFilterCardsPanelWeightY) * 100);
+        gbc.gridheight = (int) (sharedFiltersPanelWeightY * 100);
+        gbc.weighty = sharedFiltersPanelWeightY;
+        localParentPanel.add(sharedFiltersPanel, gbc);
+
+        return localParentPanel;
     }
 
     /**
-     * Composes the pickle, tomato, protein selector and price prompt panels into a single panel for filters shared by salads and burgers. This is in a GridBagLayout that looks like:
+     * Composes the pickle, tomato, protein selector and price prompt panels into a single panel for filters
+     * shared by salads and burgers. This is in a GridBagLayout that looks like:
      * <li>LEFT Pickles & tomato RIGHT proteins; takes a majority of the overall panel's height</li>
      * <li>Cheese</li>
      * <li>Price</li>
@@ -190,7 +207,7 @@ public class OrderGui implements OrderingSystemListener {
         // PICKLES AND TOMATO PANEL
         JPanel picklesAndTomatoPanel = makePicklesAndTomatoSelectorPanel();
         // PROTEIN PROMPT AND SELECTOR
-        JPanel proteinPromptAndSelectorPanel = makeProteinPromptAndSelectorPanel();
+        JPanel proteinPromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.PROTEIN);
         //List<Object> proteinsSelected = proteinSelectors.getSelectedValuesList(); //TODO move to search button**************
         // MIN AND MAX PRICE PROMPT AND SELECTORS
         JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
@@ -236,6 +253,140 @@ public class OrderGui implements OrderingSystemListener {
         sharedFiltersPanel.add(pricePromptAndSelectorPanel, gbc);
 
         return sharedFiltersPanel;
+    }
+
+    /**
+     * Creates the SaladFiltersPanel, a series of nested panels held at the top level in a GridBagLayout.
+     * <p>Layout is:
+     * <li>NW dressing selector with combobox</li>
+     * <li>W between dressing and cucumber, small vertical glue</li>
+     * <li>SW cucumber selector with radiobuttons</li>
+     * <li>E leafy greens list multi selector</li>
+     *
+     * @return JPanel with all salad-only filters
+     */
+    private JPanel makeSaladFiltersPanel() {
+        JPanel saladFiltersPanel = new JPanel(new GridBagLayout);
+
+        JPanel leafyGreensSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.LEAFY_GREENS);
+
+        //CUCUMBER PROMPT AND BUTTONS
+        JPanel cucumberPromptAndSelectorPanel = makeCucumberPromptAndSelectorPanel();
+
+        JPanel dressingPromptAndSelectorPanel = makeDressingPromptAndSelectorPanel();
+
+        // Overall weightX values--must add to 1.0
+        double leafyGreensWeightX = 0.5;
+        double horizontalFillerWeightX = 0.2;
+        double firstColWeightX = 0.3;
+
+        // First col weight y values--must add to 1.0
+        double firstColFillerWeightY = 0.2;
+        double dressingWeightY = 0.4;
+        double cucumberWeightY = 0.4;
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = 1; // All grid widths are 1
+
+        // CUCUMBER BUTTONS PANEL
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridheight = (int) (dressingWeightY * 10); //take the first 4 rows in the first col
+        gbc.weightx = firstColWeightX;
+        gbc.weighty = dressingWeightY;
+        gbc.fill = GridBagConstraints.BOTH;
+        saladFiltersPanel.add(dressingPromptAndSelectorPanel, gbc);
+
+        //VERTICAL FILLER GLUE BETWEEN DRESSING (TOP) AND CUCUMBER BUTTONS (BELOW)
+        gbc.gridx = 0;
+        gbc.gridy = (int) (dressingWeightY * 10); //Start from where the dressing finished vertically
+        gbc.gridheight = (int) (firstColFillerWeightY * 10); //take the next 2 rows in the first col
+        gbc.weightx = firstColWeightX;
+        gbc.weighty = firstColFillerWeightY;
+        saladFiltersPanel.add(Box.createVerticalGlue(), gbc);
+
+        //CUCUMBER BUTTONS PANEL
+        gbc.gridx = 0;
+        gbc.gridy = (int) ((dressingWeightY + firstColFillerWeightY) * 10); //Start where the vertical filler ended
+        gbc.weightx = firstColWeightX;
+        gbc.weighty = cucumberWeightY;
+        saladFiltersPanel.add(cucumberPromptAndSelectorPanel, gbc);
+
+        //HORIZONTAL FILLER GLUE BETWEEN DRESSING+CUCUMBER (LEFT) AND LEAFY GREENS (RIGHT)
+        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.gridheight = (int) ((dressingWeightY + firstColFillerWeightY + cucumberWeightY) *10); //stretch across all rows
+        gbc.weightx = horizontalFillerWeightX;
+        gbc.weighty = 1.0;
+        saladFiltersPanel.add(Box.createHorizontalGlue(), gbc);
+
+        //LEAFY GREENS PANEL (RIGHT PORTION OF GRID)
+        gbc.gridx = 2; gbc.gridy = 0;
+        gbc.gridheight = (int) ((dressingWeightY + firstColFillerWeightY + cucumberWeightY) *10); //stretch across all rows
+        gbc.weightx = leafyGreensWeightX;
+        gbc.weighty = 1.0;
+        saladFiltersPanel.add(leafyGreensSelectorPanel, gbc);
+
+        return saladFiltersPanel;
+    }
+
+    /**
+     * Composes the bun and sauces prompt and selector panels into a single panel for burger-only filters.
+     * This is a GridBagLayout that looks like:
+     * <li>LEFT 30% bun selection, top anchored and horizontal stretch</li>
+     * <li>20% empty glue</li>
+     * <li>RIGHT 50% sauces multi-selector</li>
+     * @return JPanel for all burger-only filter selection
+     */
+    private JPanel makeBurgerFiltersPanel() {
+        JPanel burgerFiltersPanel = new JPanel(new GridBagLayout());
+
+        JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
+        JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCE_S);
+
+        // Values must add up to 1; allows easy base10 conversion for grid position
+        double bunWeightX = 0.3;
+        double sauceWeightX = 0.5;
+        double fillerWeightX = 0.2; //fill weight between bun and sauce selection
+
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // Bun selector takes up the first 30% of the horizontal area. It's anchored to the top of
+        // the grid and fills horizontally.
+        gbc.gridx = 0; gbc.gridy = 0; //(0,0)
+        gbc.gridwidth = (int) (bunWeightX * 10); gbc.gridheight = 1;
+        gbc.weightx = bunWeightX; gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTH;
+        burgerFiltersPanel.add(bunPromptAndSelectorPanel, gbc);
+
+        // Filler glue between the two panels
+        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.gridwidth = 1; gbc.gridheight = 1;
+        gbc.weightx = fillerWeightX; gbc.weighty = 1.0;
+        burgerFiltersPanel.add(Box.createHorizontalGlue(), gbc);
+
+        //Sauce selector takes up the right-most 50% of the horizontal area.
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1; gbc.gridheight = 1;
+        gbc.weightx = sauceWeightX; gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        burgerFiltersPanel.add(saucePromptAndSelectorPanel, gbc);
+
+        return  burgerFiltersPanel;
+    }
+
+    /**
+     * Creates a panel for getting Dressing selections. Prompt label in NORTH and combobox returning Object in CENTER
+     * @return JPanel with JLabel and JComboBox
+     */
+    private JPanel makeDressingPromptAndSelectorPanel() {
+        JPanel dressingPromptAndSelectorPanel = new JPanel(new BorderLayout());
+        JLabel dressingPromptLabel = new JLabel(Filter.DRESSING.filterPrompt());
+        JComboBox<Object> dressingPromptComboBox = new JComboBox<>(MenuSearcher.getAvailableOptions(Filter.DRESSING).toArray());
+        dressingPromptAndSelectorPanel.add(dressingPromptLabel, BorderLayout.NORTH);
+        dressingPromptAndSelectorPanel.add(dressingPromptComboBox, BorderLayout.CENTER);
+
+        return  dressingPromptAndSelectorPanel;
     }
 
     /**
@@ -300,13 +451,18 @@ public class OrderGui implements OrderingSystemListener {
         //TOMATOES PROMPT AND BUTTONS
         JLabel tomatoPromptLabel = new JLabel(Filter.TOMATO.filterPrompt());
         ButtonGroup tomatoGroup = new ButtonGroup();
-        JRadioButton tomatoButton = new JRadioButton("Yes");
+        JRadioButton tomatoButton1 = new JRadioButton("Yes");
         JRadioButton tomatoButton2 = new JRadioButton("No");
         JRadioButton tomatoButton3 = new JRadioButton("I Don't Mind");
-        tomatoGroup.add(tomatoButton);
+        //Register with the tomato ButtonGroup
+        tomatoGroup.add(tomatoButton1);
         tomatoGroup.add(tomatoButton2);
         tomatoGroup.add(tomatoButton3);
+        //Create holding Panel and add relevant buttons.
         JPanel tomatoButtonsPanel = new JPanel(new GridLayout(1, 3));
+        tomatoButtonsPanel.add(tomatoButton1);
+        tomatoButtonsPanel.add(tomatoButton2);
+        tomatoButtonsPanel.add(tomatoButton3);
 
         // PICKLES PROMPT AND CHECKBOX
         JLabel picklePromptLabel = new JLabel(Filter.PICKLES.filterPrompt());
@@ -322,23 +478,58 @@ public class OrderGui implements OrderingSystemListener {
     }
 
     /**
-     * Factory helper to make a protein prompt and selector child panel for the filter panel.
-     * @return JPanel with a proteinPromptLabel (BorderLayout.NORTH) and a
-     * scrollpane with a JList<Object> proteinSelectors allowing multi select (BorderLayout.CENTER)
+     * Panel holding the cucumber prompt and selector. Buttons registered to cucumberGroup ButtonGroup
+     * <p>(3,1) layout, with:
+     * <li>'Yes'</li>
+     * <li>'No'/li>
+     * <li>'I Don't Mind'</li>
+     * @return JPanel with JLabel and nested JPanel for radio buttons
      */
-    private JPanel makeProteinPromptAndSelectorPanel(){
-        JPanel proteinFiltersPanel = new JPanel(new BorderLayout());
-        JLabel proteinPromptLabel = new JLabel(Filter.PROTEIN.filterPrompt());
-        JList<Object> proteinSelectors = new JList<>(MenuSearcher.getAvailableOptions(Filter.PROTEIN).toArray());
-        proteinSelectors.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        JScrollPane proteinSelectorsScrollPane = new JScrollPane(proteinSelectors); //Scrollable
+    private JPanel makeCucumberPromptAndSelectorPanel(){
+        ButtonGroup cucumberGroup = new ButtonGroup();
+        JRadioButton cucumberButton1 = new JRadioButton("Yes");
+        JRadioButton cucumberButton2 = new JRadioButton("No");
+        JRadioButton cucumberButton3 = new JRadioButton("I Don't Mind");
+        //Register with the cucumber ButtonGroup
+        cucumberGroup.add(cucumberButton1);
+        cucumberGroup.add(cucumberButton2);
+        cucumberGroup.add(cucumberButton3);
+        //Create holding Panel and add to it
+        JPanel cucumberButtonsPanel = new JPanel(new GridLayout(3, 1));
+        cucumberButtonsPanel.add(cucumberButton1);
+        cucumberButtonsPanel.add(cucumberButton2);
+        cucumberButtonsPanel.add(cucumberButton3);
+
+        JLabel cucumberPromptLabel = new JLabel(Filter.CUCUMBER.filterPrompt());
+
+        // Compose the panel to return
+        JPanel cucumberPromptAndSelectorPanel = new JPanel(new BorderLayout());
+        cucumberPromptAndSelectorPanel.add(cucumberPromptLabel, BorderLayout.NORTH);
+        cucumberButtonsPanel.add(cucumberPromptAndSelectorPanel, BorderLayout.CENTER);
+
+        return cucumberPromptAndSelectorPanel;
+    }
+
+    /**
+     * Factory helper that builds a JPanel with prompt label and a scrollable JList for multiple selection of filters.
+     * Uses BorderLayout, with the promptLabel taking NORTH and the selection area taking CENTER
+     * @param filter the Filter whose values and prompt are to be populated
+     * @return JPanel for multi selection of the relevant Filter.
+     */
+    private JPanel makeMultiSelectionPanelWithLabelAndScroll(Filter filter) {
+        JPanel promptAndSelectorPanelWithScroll = new JPanel(new BorderLayout());
+        JLabel promptLabel = new JLabel(filter.filterPrompt());
+        JList<Object> filterSelectors = new JList<>(MenuSearcher.getAvailableOptions(filter).toArray());
+        filterSelectors.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        JScrollPane filterSelectorsScrollPane = new JScrollPane(filterSelectors); //Scrollable
 
         // Compose protein panel
-        proteinFiltersPanel.add(proteinPromptLabel,  BorderLayout.NORTH);
-        proteinFiltersPanel.add(proteinSelectorsScrollPane, BorderLayout.CENTER);
+        promptAndSelectorPanelWithScroll.add(promptLabel, BorderLayout.NORTH);
+        promptAndSelectorPanelWithScroll.add(filterSelectorsScrollPane, BorderLayout.CENTER);
 
-        return proteinFiltersPanel;
+        return promptAndSelectorPanelWithScroll;
     }
+
 
     /**
      * Factory helper to make a bun prompt and selector child panel for the filter panel.

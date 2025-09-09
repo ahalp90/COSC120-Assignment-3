@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class MenuSearcher implements GuiListener, MenuDataProvider {
+public class MenuSearcher implements GuiListener {
     /**
      * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
      */
