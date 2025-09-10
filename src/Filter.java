@@ -1,6 +1,7 @@
 public enum Filter {
     /**
-     * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
+     * Created by Dr Andreas Shepley for COSC120 on 25/04/2025.
+     * Smart Enum methods added by Ariel Halperin.
      */
     TYPE,BUN,PROTEIN,CHEESE,PICKLES,CUCUMBER,TOMATO,DRESSING,LEAFY_GREENS,SAUCE_S;
 
@@ -95,9 +96,37 @@ public enum Filter {
         };
     }
 
+    /**
+     * Identifies Filters that do not have dedicated Enums of their possible values and cannot
+     * be represented by a simple true/false/null distinction.
+     * @return true if menu data is needed for filter, false otherwise.
+     */
+    public boolean needsMenuDataForSelectorOptions() {
+        return switch (this){
+            case BUN, CHEESE, LEAFY_GREENS -> true;
+            default -> false;
+        };
+    }
 
+    /**
+     * Identifies Filters that are relevant to Burger selection
+     * @return true if relevant for burgers
+     */
+    public boolean isRelevantForBurger() {
+        return switch (this){
+            case TYPE,BUN,PROTEIN,CHEESE,PICKLES,TOMATO,SAUCE_S -> true;
+            default -> false;
+        };
+    }
 
-
-
-
+    /**
+     * Identifies Filters that are relevant to Salad selection
+     * @return true if relevant for salads
+     */
+    public boolean isRelevantForSalad() {
+        return switch (this) {
+            case TYPE,PROTEIN,CHEESE,PICKLES,CUCUMBER,TOMATO,DRESSING,LEAFY_GREENS -> true;
+            default -> false;
+        };
+    }
 }

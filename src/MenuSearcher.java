@@ -20,10 +20,34 @@ public class MenuSearcher implements GuiListener {
 
     public static void main(String[] args) {
         menu = loadMenu(filePath);
-        //OrderGui gui = new OrderGui(new
+        OrderGui gui = new OrderGui(getFilterOptions());
         DreamMenuItem dreamMenuItem = getFilters();
         processSearchResults(dreamMenuItem);
         System.exit(0);
+    }
+
+    /**
+     * Populates an immutable map with immutable Lists for all filter options.
+     * Calls Menu public helper to compile ingredient lists as needed.
+     * Otherwise populates directly from Enums
+     * @return Map of Lists of Object representing filters.
+     */
+    private static Map<Filter, List<Object>> getFilterOptions(){
+        Map<Filter, List<Object>> filterOptions = new HashMap<>();
+
+        filterOptions.put(Filter.DRESSING, List.copyOf(Arrays.asList(Dressing.values())));
+        filterOptions.put(Filter.PROTEIN, List.copyOf(Arrays.asList(Protein.values())));
+        filterOptions.put(Filter.SAUCE_S, List.copyOf(Arrays.asList(Sauce.values())));
+        filterOptions.put(Filter.TYPE, List.copyOf(Arrays.asList(Type.values())));
+        //Add options for filters who need their values read from menu because they can't be
+        //identified by their own Enums or by a Boolean/boolean
+        for (Filter thisFilter : Filter.values()) {
+            if (thisFilter.needsMenuDataForSelectorOptions()){
+                filterOptions.put(thisFilter, List.copyOf(menu.getAllIngredientTypes(thisFilter)));
+            }
+        }
+
+        return Map.copyOf(filterOptions);
     }
 
     public static DreamMenuItem getFilters(){

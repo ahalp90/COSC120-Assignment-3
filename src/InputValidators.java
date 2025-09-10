@@ -19,6 +19,11 @@ public final class InputValidators {
             +"\nPlease enter your full name in First name & Surname format. "
             +"\nThe first letter of each name must be uppercase, and the two separated by a space. \ne.g. Burger Bob";
 
+    public static final String ERROR_INVALID_PRICE_FORMAT = "Sorry, that price format is invalid."
+            +"\nPlease enter numbers only."
+            +"\nThe only non-numeric character may be a full-stop as a decimal separator.\n"
+            +"e.g. 3.50";
+
     /**
      * Validates whether an input email address matches the RFC 5322 standard.
      * @param email String of the purported email
@@ -50,5 +55,22 @@ public final class InputValidators {
     public static boolean isFullName(String fullName) {
         if (fullName == null) return false; //Defensively circumvents NPE and is true--null obviously not valid.
         return  fullNamePattern.matcher(fullName).matches();
+    }
+
+    /**
+     * Validates that the String can be parsed to a non-negative float.
+     * <p>Expects caller to handler false returns.
+     * @param priceString the String to validate
+     * @return true if the String is a valid, non-negative price.
+     */
+    public static boolean isValidPrice(String priceString) {
+        if (priceString == null || priceString.isBlank()) return false;
+
+        try {
+            float price = Float.parseFloat(priceString);
+            return price >= 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }
