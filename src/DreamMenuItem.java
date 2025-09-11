@@ -48,14 +48,19 @@ public class DreamMenuItem {
     public boolean matches(DreamMenuItem dreamMenuItem){
         for(Filter key : dreamMenuItem.getAllFilters().keySet()) {
             if(this.getAllFilters().containsKey(key)){
+                //For Collections, check for a non-empty intersection.
                 if(getFilter(key) instanceof Collection<?> && dreamMenuItem.getFilter(key) instanceof Collection<?>){
                     Set<Object> intersect = new HashSet<>((Collection<?>) dreamMenuItem.getFilter(key));
                     intersect.retainAll((Collection<?>) getFilter(key));
                     if(intersect.size()==0) return false;
                 }
                 else{
+                    //For single Objects, check direct equality
                     if(!this.getFilter(key).equals(dreamMenuItem.getFilter(key))) return false;
                 }
+            //ELSE: USER SPECIFIED FILTER DOES NOT EXIST IN MENU ITEM--EG. A BURGER LOADED WITHOUT LEAFYGREENS KEY.
+            } else {
+                return false;
             }
         }
         return true;

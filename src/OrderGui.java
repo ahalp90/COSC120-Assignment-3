@@ -24,10 +24,10 @@ public class OrderGui implements OrderingSystemListener {
     //***CONSTANTS***
     private static final Dimension GUI_PREFERRED_SIZE = new Dimension(800, 450);
     private static final String SEARCH_BUTTON_IMG_PATH = "images/search-now.png";
-    private static final String WELCOME_BACKGROUND_IMG_PATH = "images/welcome.png";
+    private static final String WELCOME_BACKGROUND_IMG_PATH = "images/welcome-background.png";
     private static final String SIDE_BANNER_IMG_PATH = "images/side_banner.png";
-    private static final int WELCOME_CARD_ROWS = 8;
-    private static final int WELCOME_CARD_COLS = 5;
+
+    private static final BufferedImage FRAME_ICON_IMAGE = loadBufferedImage("images/overloaded_burgers_graphic_small.png");
 
 
     public OrderGui(Map<Filter, List<Object>> filterOptions) {
@@ -36,6 +36,7 @@ public class OrderGui implements OrderingSystemListener {
 
         //SETUP MAIN FRAME
         frame = new JFrame("Overloaded Burgers");
+        frame.setIconImage(FRAME_ICON_IMAGE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setPreferredSize(GUI_PREFERRED_SIZE);
         frame.setLayout(new BorderLayout()); //allow responsive resize.
@@ -56,72 +57,154 @@ public class OrderGui implements OrderingSystemListener {
     }
 
     private JPanel makeWelcomeCardPanel() {
-        ImageIcon backgroundIcon = new ImageIcon(WELCOME_BACKGROUND_IMG_PATH);
-        Image backgroundImage = backgroundIcon.getImage();
+        //LOCAL CONSTANTS FOR LAYOUT MANAGEMENT
+        int WELCOME_CARD_ROWS = 8;
+        int WELCOME_CARD_COLS = 5;
+
+        Image backgroundImage = loadBufferedImage(WELCOME_BACKGROUND_IMG_PATH);
 
         //CREATE THE CORE PANEL; custom repaint logic for responsive resize of direct-painted background img
-        JPanel welcomePanel = new JPanel(new GridBagLayout()) {
+        JPanel welcomePanel = new JPanel(new GridLayout(WELCOME_CARD_ROWS, 1)) {
             //Custom repaint to paint directly to background, allowing responsive resize.
+            //Code ideas as cited in Welcome Button comments
             @Override protected void paintComponent (Graphics g) {
+                // Clear background and set-up non-custom aspects of the JPanel
+                // https://docs.oracle.com/javase/tutorial/uiswing/painting/closer.html
                 super.paintComponent(g);
-                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+
+                // Set Rendering hints to make it scale nicely
+                Graphics2D g2d = (Graphics2D) g.create();
+
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+
+                //Actually draw it!
+                g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+
+                g2d.dispose();
             }
         };
+
         welcomePanel.setPreferredSize(GUI_PREFERRED_SIZE);//Preload with logical preferred size
 
         //CREATE THE 'Order Now' BUTTON AND ADD ACTION LISTENER
         JButton orderNow = makeImgOnlyButtonWithResize(
-                "icons/order-now-button.png",
-                "welcomePanel",
-                new Dimension(GUI_PREFERRED_SIZE.width / WELCOME_CARD_COLS, GUI_PREFERRED_SIZE.height / WELCOME_CARD_ROWS)
+                "images/order-now-button.png",
+                new Dimension((int)(GUI_PREFERRED_SIZE.width / WELCOME_CARD_COLS),
+                        (int)(GUI_PREFERRED_SIZE.height / WELCOME_CARD_ROWS))
         );
+        orderNow.setBorderPainted(false); //get rid of the default rectangular border
         orderNow.addActionListener(e -> switchCard("mainFilterPanel"));
 
-        //TODO FIXME*****************************************************************************************************
-        // Layout manage to precisely place the button where it's wanted--cell (3,8).
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = WELCOME_CARD_COLS;
-        gbc.gridy = WELCOME_CARD_ROWS;
-        gbc.weightx = 1.0 /  WELCOME_CARD_COLS;
-        gbc.weighty = 1.0 /  WELCOME_CARD_ROWS;
-        gbc.fill = GridBagConstraints.BOTH;
-        
-        welcomePanel.add(orderNow, gbc);
+
+        //                      *** LAYOUT MANAGEMENT ***
+
+        //POSITION BUTTON AT THE BASE OF THE GRIDBAGLAYOUT USING THE INVISIBLE FILLER TO SQUISH IT INTO POSITION.
+        //Button horizontally centred and vertically bottom row.
+
+        //Create blank labels that occupy all but the last row of the parent's grid layout
+        JLabel[] blankRowLabels = new JLabel[WELCOME_CARD_ROWS-1];
+        for (int i = 0; i < WELCOME_CARD_ROWS-1; i++) {
+            blankRowLabels[i] = new JLabel();
+            blankRowLabels[i].setOpaque(false);
+            welcomePanel.add(blankRowLabels[i]);
+        }
+
+
+        //Arrange the final row in a self-contained Panel to center the button
+        JPanel centredButtonPanel = new JPanel(new GridLayout(1, WELCOME_CARD_COLS));
+        centredButtonPanel.setOpaque(false);
+        // Make an array of invisible JLabels; number 0 to push the button down to the south, and 1
+        // and 2 to horizontally centre it on its row.
+        JLabel[] blankColLabels = new JLabel[WELCOME_CARD_COLS];
+        for (int i = 0; i < blankColLabels.length; i++) {
+            blankColLabels[i] = new JLabel();
+            blankColLabels[i].setOpaque(false);
+            if (i == 2) {
+                centredButtonPanel.add(orderNow);
+            } else {
+                centredButtonPanel.add(blankColLabels[i]);
+            }
+        }
+
+        welcomePanel.add(centredButtonPanel);
 
         return welcomePanel;
     }
 
     /**
      * Creates the main filtering view; composes core FilterEntryPanel onto a Panel with a side banner and search button.
+     * <p>Uses JSplitPane to achieve layout split.
+     * <p>Ideas from: https://stackoverflow.com/questions/44027958/which-java-layout-is-suitable-for-my-layout
+     * and https://docs.oracle.com/javase/tutorial/uiswing/components/splitpane.html
      * @return JPanel with the mainBurgerFilterPanel
      */
     private JPanel makeMainBurgerFilterPanel() {
-        //Easy layout with banner WEST, search button SOUTH and FilterEntryPanel CENTER
-        JPanel mainBurgerFilterPanel = new JPanel(new BorderLayout());
-        mainBurgerFilterPanel.setPreferredSize(GUI_PREFERRED_SIZE);
-
         // SIDE BANNER - ALWAYS VISIBLE
         //Create image with custom scaling to fit the width of its container while keeping its ratio.
         final BufferedImage sourceImage = loadBufferedImage(SIDE_BANNER_IMG_PATH);
         JLabel sideBanner = new JLabel() {
             @Override
             protected void paintComponent(Graphics g) {
+                //Responsive resizing image and rendering hint ideas as for welcome button and welcome background jpanel
                 super.paintComponent(g);
+
+                // Set Rendering hints to make it scale nicely
+                Graphics2D g2d = (Graphics2D) g.create();
+
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+
                 // Scale by width--looks less weird to pad top and bottom than sides.
                 float scale = (float) getWidth() / sourceImage.getWidth();
                 int scaledHeight = (int) (sourceImage.getHeight() * scale);
                 int y = (getHeight() - scaledHeight) / 2; //Figure out the origin y coordinate.
-                g.drawImage(sourceImage, 0, y, getWidth(), scaledHeight, this);
+
+                //Actually draw it
+                g2d.drawImage(sourceImage, 0, y, getWidth(), scaledHeight, this);
+
+                g2d.dispose();
             }
         };
-        // Set preferred size to 1/4 GUI as a hint to BorderLayout
-        sideBanner.setPreferredSize(new Dimension((int)(GUI_PREFERRED_SIZE.width / 4), 0));
 
         JButton searchButton = makeSearchButton();
+        JPanel filterPanel = this.filterEntryPanel.getView(); //local variable name to make it neater below.
 
-        mainBurgerFilterPanel.add(sideBanner, BorderLayout.WEST);
-        mainBurgerFilterPanel.add(searchButton, BorderLayout.SOUTH);
-        mainBurgerFilterPanel.add(this.filterEntryPanel.getCorePanel(), BorderLayout.CENTER);
+        //Set minimum dimensions (token value) so that the layout manager properly respects the resize weights.
+        sideBanner.setMinimumSize(new Dimension(1,1));
+        filterPanel.setMinimumSize(new Dimension(1,1));
+        searchButton.setMinimumSize(new Dimension(1,1));
+
+
+        //This is the right side, it's a vertical split between the filter panel and the search button
+        JSplitPane rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filterPanel, searchButton);
+        rightSplit.setResizeWeight(0.85);
+        rightSplit.setDividerSize(0);
+        rightSplit.setBorder(null);
+        rightSplit.setEnabled(false);
+
+        //Force the divider to be in the correct spot from startup
+        //The invokeLater feels like it shouldn't be necessary since this GUI is already on the EDT, but Swing is a pig.
+        SwingUtilities.invokeLater(() -> {rightSplit.setDividerLocation(0.85);});
+
+
+        //This is a horizontal split to put the banner on the left and the above components on the right.
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sideBanner, rightSplit);
+        mainSplit.setResizeWeight(0.3);
+        mainSplit.setDividerSize(0);
+        mainSplit.setBorder(null);
+        mainSplit.setEnabled(false);
+
+        SwingUtilities.invokeLater(() -> {mainSplit.setDividerLocation(0.3);});
+
+        //Finally put it all together and return the panel.
+        JPanel mainBurgerFilterPanel = new JPanel(new BorderLayout());
+        mainBurgerFilterPanel.setPreferredSize(GUI_PREFERRED_SIZE);
+        mainBurgerFilterPanel.add(mainSplit, BorderLayout.CENTER);
 
         return mainBurgerFilterPanel;
     }
@@ -140,88 +223,6 @@ public class OrderGui implements OrderingSystemListener {
         searchButton.addActionListener(e -> performSearch());
         return searchButton;
     }
-
-//    private JPanel filterSelectorsPanel() {
-//        /*
-//         THIS NEEDS TO FILTER FOR:
-//         BURGER ONLY: BUN, SAUCE_S
-//         SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
-//         BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
-//
-//         I DON'T MIND SELECTORS: BUN, SAUCE_S,LEAFY_GREENS, CUCUMBER, DRESSING, PROTEIN, TOMATO
-//         ALLOWS EXPLICIT 'NONE' SELECTION: TOMATO, CUCUMBER, PICKLES, SAUCES, PROTEINS AND LEAFY_GREENS
-//         */
-//
-//        // MAIN PANEL TO BE RETURNED
-//        JPanel localParentPanel = new JPanel (new GridBagLayout());
-//        localParentPanel.setPreferredSize(GUI_PREFERRED_SIZE);
-//
-//        JPanel sharedFiltersPanel = makeSharedFiltersPanel();
-//        JPanel burgerFiltersPanel = makeBurgerFiltersPanel();
-//        JPanel saladFiltersPanel = makeSaladFiltersPanel();
-//
-//        //INNER-WRAPPER JPANEL W/ CARDLAYOUT TO SWITCH BURGER & SALAD VIEWS
-//        CardLayout cardLayout = new CardLayout();
-//        JPanel typeSpecificFilterCardsPanel = new JPanel(cardLayout);
-//        typeSpecificFilterCardsPanel.add(burgerFiltersPanel, "burgerFilters");
-//        typeSpecificFilterCardsPanel.add(saladFiltersPanel, "saladFilters");
-//
-//        // TYPE PROMPT AND SELECTOR -- TYPE SELECTION GOVERNS CARD DISPLAY (BUN/SALAD PANELS)
-//        JPanel typeFilterPanel = new JPanel(new BorderLayout());
-//        JLabel itemTypePromptLabel = new JLabel(Filter.TYPE.filterPrompt());
-//        JComboBox<Type> itemTypeSelector = new JComboBox<>(Type.values());
-//
-//        //Compose typeFilterPanel layout
-//        typeFilterPanel.add(itemTypePromptLabel, BorderLayout.WEST);
-//        typeFilterPanel.add(itemTypeSelector, BorderLayout.CENTER);
-//
-//
-//        //                  *** COMPOSE THE PANEL TO RETURN ***
-//        //local constants for gbc values
-//        double typeWeightY = 0.1;
-//        double typeSpecificFilterCardsPanelWeightY = 0.4;
-//        double sharedFiltersPanelWeightY = 0.4;
-//        int verticalGluePanelsNo = 2;
-//        // Share remaining vertical space adding up to 1.0
-//        double verticalGlueWeightY =
-//                ((1 -  typeWeightY -  typeSpecificFilterCardsPanelWeightY - sharedFiltersPanelWeightY)
-//                        / verticalGluePanelsNo);
-//
-//        GridBagConstraints gbc = new GridBagConstraints();
-//        //All components at gridx with weightx 1.0, as this is a 1 column layout. All fill in both directions.
-//        gbc.gridx = 0; gbc.weightx = 1.0;
-//        gbc.fill = GridBagConstraints.BOTH;
-//
-//        //Heights are weight*100 due to the small size of the glue.
-//        //FILTER PANEL
-//        gbc.gridy = 0;
-//        gbc.gridheight = (int) (typeWeightY * 100);
-//        gbc.weighty = typeWeightY;
-//        localParentPanel.add(typeFilterPanel, gbc);
-//        //VERT GLUE #1
-//        gbc.gridy = (int) (typeWeightY * 100);
-//        gbc.gridheight = (int) (verticalGlueWeightY * 100);
-//        gbc.weighty = verticalGlueWeightY;
-//        localParentPanel.add(Box.createVerticalGlue(), gbc);
-//        //TYPE-SPECIFIC PANEL
-//        gbc.gridy = (int) ((typeWeightY + verticalGlueWeightY)* 100);
-//        gbc.gridheight = (int) (typeSpecificFilterCardsPanelWeightY * 100);
-//        gbc.weighty = typeSpecificFilterCardsPanelWeightY;
-//        localParentPanel.add(typeSpecificFilterCardsPanel, gbc);
-//        //VERT GLUE #2
-//        gbc.gridy = (int) ((typeWeightY + verticalGlueWeightY + typeSpecificFilterCardsPanelWeightY) * 100);
-//        gbc.gridheight = (int) (verticalGlueWeightY * 100);
-//        gbc.weighty = verticalGlueWeightY;
-//        localParentPanel.add(Box.createVerticalGlue(), gbc);
-//        //SHARED FILTERS PANEL
-//        gbc.gridy = (int) (int) ((typeWeightY + (verticalGlueWeightY*2) + typeSpecificFilterCardsPanelWeightY) * 100);
-//        gbc.gridheight = (int) (sharedFiltersPanelWeightY * 100);
-//        gbc.weighty = sharedFiltersPanelWeightY;
-//        localParentPanel.add(sharedFiltersPanel, gbc);
-//
-//        return localParentPanel;
-//    }
-
 
     private void performSearch() {
         //Get raw data from the core view panel
@@ -250,20 +251,24 @@ public class OrderGui implements OrderingSystemListener {
                 new DreamMenuItem(
                         buildFilterMapFromRecord(selections), minPrice, maxPrice);
 
-        MenuSearcher.processSearchResults(dreamMenuItem);
+        //GUI's done processing logic for now--back to being a view--pass off to the relevant listener (MenuSearcher).
+        for (GuiListener listener : listeners) {
+            listener.performSearch(dreamMenuItem);
+        }
     }
 
 
     /**
-     * Factory helper to build a Filter Map of Filter-Object from a FilterSelections record.
+     * Private helper to translate FilterSelections Record to the required format for search by DreamMenuItem.
      * <p>Contains processing logic for empty and null selections; null (i.e. 'Skip-Any will do') selections are not added.
      * Selections irrelevant to the type are also not added--type relevance informed by Filter Smart Enum.
-     * @param selections Record of selections by user.
-     * @return unmodifiable view of the Map created
+     * @param selections FilterSelections Record of selections by user.
+     * @return unmodifiable view of the Map created, key Filter, value Object.
      */
     private Map<Filter, Object> buildFilterMapFromRecord(FilterSelections selections) {
         Map<Filter, Object> filterMap = new HashMap<>();
-        Type selectedType = selections.selectedType();
+
+        Type selectedType = selections.selectedType(); //local var to avoid isRelevant lookup
 
         for (Filter filter : Filter.values()) {
             boolean isRelevant =
@@ -271,7 +276,7 @@ public class OrderGui implements OrderingSystemListener {
                             (selectedType == Type.SALAD && filter.isRelevantForSalad());
             if (isRelevant) {
                 Object value = switch (filter) {
-                    case TYPE -> selections.selectedType();
+                    case TYPE -> selectedType;
                     case BUN -> selections.selectedBun();
                     case SAUCE_S -> selections.selectedSauces().isEmpty() ? null : selections.selectedSauces();
                     case DRESSING -> selections.selectedDressing();
@@ -289,7 +294,7 @@ public class OrderGui implements OrderingSystemListener {
         return Collections.unmodifiableMap(filterMap);
     }
 
-    private BufferedImage loadBufferedImage(String imagePath) {
+    private static BufferedImage loadBufferedImage(String imagePath) {
         BufferedImage bufferedImage = null;
         try {
             bufferedImage = ImageIO.read(new File(imagePath));
@@ -315,21 +320,32 @@ public class OrderGui implements OrderingSystemListener {
         // https://stackoverflow.com/questions/78701695/how-do-i-scale-or-set-the-the-size-of-an-imageicon-in-java
         // The original code used Image, but I have opted for BufferedImage based on this:
         // https://docs.oracle.com/javase/tutorial/2d/images/index.html
+        // Rendering hints inspired by my work on a Java Chess gui and also this post here:
+        // https://stackoverflow.com/questions/59431324/java-how-to-make-an-antialiasing-line-with-graphics2d
         button.setIcon(new Icon() {
-               @Override
-               public void paintIcon(Component c, Graphics g, int x, int y) {
-                   g.drawImage(sourceImage, x, y, c.getWidth(), c.getHeight(), c);
-               }
+           @Override
+           public void paintIcon(Component c, Graphics g, int x, int y) {
+               Graphics2D g2d = (Graphics2D) g.create();
 
-               @Override
-               public int getIconWidth() {
-                   return button.getWidth();
-               }
+               g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+               g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+               g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+               g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
 
-               @Override
-               public int getIconHeight() {
-                   return button.getHeight();
-               }
+               g2d.drawImage(sourceImage, x, y, c.getWidth(), c.getHeight(), c);
+
+               g2d.dispose();
+           }
+
+           @Override
+           public int getIconWidth() {
+               return button.getWidth();
+           }
+
+           @Override
+           public int getIconHeight() {
+               return button.getHeight();
+           }
            });
 
         return button;
@@ -344,5 +360,36 @@ public class OrderGui implements OrderingSystemListener {
         topCardLayout.show(topCardPanel, cardName);
     }
 
+    //              ***LISTENER INTERFACE INTERACTION METHODS***
+
+    public void addGuiListener(GuiListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void onSearchResults(List<MenuItem> matches) {
+        StringJoiner resultsText = new StringJoiner("\n");
+        for  (MenuItem item : matches) {
+            resultsText.add("*** " + item.getMenuItemName());
+        }
+        JOptionPane.showMessageDialog(
+                frame, resultsText.toString(), "Search Results", JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    @Override
+    public void onNoMatchesFound(DreamMenuItem originalDreamFilters) {
+        int choice = JOptionPane.showConfirmDialog(
+                frame,
+                "Sorry, no matches found. Would you like to place a custom order?",
+                "No Results",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            System.out.println("TESTING: User wants to place a custom order");
+        }
+    }
 
 }

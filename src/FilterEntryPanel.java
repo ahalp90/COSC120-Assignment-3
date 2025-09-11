@@ -3,8 +3,18 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+/**
+ * This class is the main view for filter entry. It creates all the relevant components for filter value input.
+ * <p>It is intended to filter for:
+ * <li>BURGER ONLY: BUN, SAUCE_S
+ * <li>SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
+ * <li>BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
+ *
+ * <li>I DON'T MIND SELECTORS: BUN, SAUCE_S,LEAFY_GREENS, CUCUMBER, DRESSING, PROTEIN, TOMATO
+ * <li>ALLOWS EXPLICIT 'NONE' SELECTION: TOMATO, CUCUMBER, PICKLES, SAUCES, PROTEINS AND LEAFY_GREENS
+ *
+ */
 public class FilterEntryPanel {
-
     // FIELDS FOR STORING SELECTOR SELECTIONS BEFORE PROCESSING; Map would be possible, but less explicit = hard to maintain.
     private final JComboBox<Type> itemTypeSelector;
     private final JComboBox<Object> bunSelector;
@@ -22,60 +32,10 @@ public class FilterEntryPanel {
     // THE CORE COMPOSED JPANEL THAT WILL HOLD ALL THE SUB-COMPONENTS
     private final JPanel corePanel;
 
-    /**
-     * Inner private Enum for dealing with validating the button group
-     * --only reliable and neat way to address intended null returns correctly.
-     */
-    private enum YesNoSkipValidStrings {
-        YES,
-        NO,
-        I_DONT_MIND;
-
-        /**
-         * Provide prettified toStrings for this enum's values
-         * @return
-         */
-        @Override
-        public String toString() {
-            return switch (this) {
-                case YES -> "Yes";
-                case NO -> "No";
-                case I_DONT_MIND -> "I Don't Mind";
-            };
-        }
-
-
-    }
-
     public FilterEntryPanel(Map<Filter, List<Object>> filterOptions) {
-        this.corePanel = new JPanel(new GridBagLayout());
 
-        // Initialise the CardLayout and its JPanel here to pass to relevant constructors.
-        CardLayout typeSpecificCardLayout = new CardLayout();
-        JPanel typeSpecificFilterCardsPanel = new JPanel(typeSpecificCardLayout);
-
-        //INITIALISE FIELD COMPONENTS
-        initialiseComponents(filterOptions);
-
-        //BUILD THE COMPONENTS AND OVERALL LAYOUT
-        buildLayout(typeSpecificCardLayout, typeSpecificFilterCardsPanel);
-
-        //LISTENER FOR TYPE STATE--BURGER OR SALAD; FLIPS VARIABLE COMPONENTS TO RELEVANT CARD
-        itemTypeSelector.addActionListener(e -> {
-            Type selectedType = (Type) itemTypeSelector.getSelectedItem();
-            //This could be simplified to a ternary expression, but the explicit cases for both
-            //types makes it easier to add new types in future.
-            if (selectedType == Type.BURGER) {
-                typeSpecificCardLayout.show(typeSpecificFilterCardsPanel, "burgerFilters");
-            } else if (selectedType == Type.SALAD) {
-                typeSpecificCardLayout.show(typeSpecificFilterCardsPanel, "saladFilters");
-            }
-        });
-    }
-
-
-    private void initialiseComponents(CardLayout typeSpecificCardLayout, JPanel typeSpecificFilterCardsPanel,
-                                      Map<Filter, List<Object>> filterOptions) {
+        //INITIALISE ALL FIELD ITEMS
+        //NB. These field item instantiations would sit better in a helper, but it makes IntelliJ grumble.
         // Item type selector
         this.itemTypeSelector = new JComboBox<>(Type.values());
 
@@ -96,13 +56,43 @@ public class FilterEntryPanel {
         this.pickleCheckBox = new JCheckBox();
         this.tomatoGroup = new ButtonGroup();
 
-        // SET THE SELECTION MODES OF THE JLISTS
+        // Set the selection modes of the JLists
         sauceList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         leafyGreensList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         proteinList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        // *** INITIALISE THE CORE PANEL TO WHICH EVERYTHING WILL BE ADDED ***
+        this.corePanel = new JPanel();
+
+        // Create a CardLayout and holder Panel--pass to relevant constructors.
+        CardLayout typeSpecificCardLayout = new CardLayout();
+        JPanel typeSpecificFilterCardsPanel = new JPanel(typeSpecificCardLayout);
+
+
+        //BUILD THE COMPONENTS AND OVERALL LAYOUT
+        buildLayout(typeSpecificFilterCardsPanel);
+
+        //LISTENER FOR TYPE STATE--BURGER OR SALAD; FLIPS VARIABLE COMPONENTS TO RELEVANT CARD
+        //NB. This was originally added at the point of the itemType panel's construction, but IntelliJ
+        //grumbled because this should happen at a point where both the CardLayout and
+        //itemTypeSelector are known to the method.
+        itemTypeSelector.addActionListener(e -> {
+            Type selectedType = (Type) itemTypeSelector.getSelectedItem();
+            //This could be simplified to a ternary expression, but the explicit cases for both
+            //types makes it easier to add new types in future.
+            if (selectedType == Type.BURGER) {
+                typeSpecificCardLayout.show(typeSpecificFilterCardsPanel, "burgerFilters");
+            } else if (selectedType == Type.SALAD) {
+                typeSpecificCardLayout.show(typeSpecificFilterCardsPanel, "saladFilters");
+            }
+        });
     }
 
-    private void buildLayout(CardLayout typeSpecificCardLayout, JPanel typeSpecificFilterCardsPanel) {
+
+    private void buildLayout(JPanel typeSpecificFilterCardsPanel) {
+        this.corePanel.setLayout(new GridBagLayout());
+        this.corePanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10)); // Give it some breathing room.
+
         JPanel sharedFiltersPanel = makeSharedFiltersPanel();
         JPanel burgerFiltersPanel = makeBurgerFiltersPanel();
         JPanel saladFiltersPanel = makeSaladFiltersPanel();
@@ -112,15 +102,14 @@ public class FilterEntryPanel {
         typeSpecificFilterCardsPanel.add(saladFiltersPanel, "saladFilters");
 
         // LAYOUT FOR THE CORE FILTERS PANEL
-        //TODO COME BACK AND ADD SPACE FOR THE BUTTON AT THE BOTTOM******************************************************
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.BOTH; //global values
 
         gbc.gridy = 0; gbc.weighty = 0.1; this.corePanel.add(typeFilterPanel, gbc);
 
-        gbc.gridy = 1; gbc.weighty = 0.45; this.corePanel.add(typeSpecificFilterCardsPanel, gbc);
+        gbc.gridy = 2; gbc.weighty = 0.35; this.corePanel.add(typeSpecificFilterCardsPanel, gbc);
 
-        gbc.gridy = 2; gbc.weighty = 0.45; this.corePanel.add(sharedFiltersPanel, gbc);
+        gbc.gridy = 1; gbc.weighty = 0.55; this.corePanel.add(sharedFiltersPanel, gbc);
     }
 
 
@@ -148,60 +137,27 @@ public class FilterEntryPanel {
      */
     private JPanel makeSharedFiltersPanel() {
         //                  *** CONTAINER FOR THE SHARED FILTER PANELS***
-        JPanel sharedFiltersPanel = new JPanel(new GridBagLayout()); //GBL for full col for proteins
+        JPanel sharedFiltersPanel = new JPanel(new GridLayout(2,2));
         // PICKLES AND TOMATO PANEL
         JPanel picklesAndTomatoPanel = makePicklesAndTomatoSelectorPanel();
         // PROTEIN PROMPT AND SELECTOR
         JPanel proteinPromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.PROTEIN);
-        //List<Object> proteinsSelected = proteinSelectors.getSelectedValuesList(); //TODO move to search button**************
+
         // MIN AND MAX PRICE PROMPT AND SELECTORS
         JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
         // CHEESE PROMPT AND SELECTOR
         JPanel cheesePromptAndSelectorPanel = makeCheesePromptAndSelectorPanel();
 
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        //          ***GRID BAG LAYOUT CONSTRAINTS FOR SHARED FILTERS PANEL***
-        //GBC height proportion allocated to this cell in shared filters panel; 3 rows
-        // local constants for non-obvious GBC values to make it easy to read and maintain.
-        double picklesTomatoProteinYWeight = 0.6;
-        double cheeseYWeight = 0.2;
-        double priceYWeight = 0.2;
-        int singleColumn = 1; //
-        int spanBothColumns = 2;
-
-
-        gbc.fill = GridBagConstraints.BOTH; //All components stretch to fill their available space
-
-        //PICKLES AND TOMATO PANEL
-        gbc.gridx = 0; gbc.gridy = 0; // (0,0)
-        gbc.gridwidth = singleColumn; gbc.gridheight = 1; //just take one cell in each direction
-        gbc.weightx = 0.5; gbc.weighty = picklesTomatoProteinYWeight;
-        sharedFiltersPanel.add(picklesAndTomatoPanel, gbc);
-
-        //PROTEIN PANEL
-        gbc.gridx = 1; gbc.gridy = 0; // (1,0)
-        gbc.gridwidth = singleColumn; gbc.gridheight = 1;
-        gbc.weightx = 0.5; gbc.weighty = picklesTomatoProteinYWeight;
-        sharedFiltersPanel.add(proteinPromptAndSelectorPanel, gbc);
-
-        //CHEESE PANEL
-        gbc.gridx = 0; gbc.gridy = 1; //(0,1)
-        gbc.gridwidth = spanBothColumns; gbc.gridheight = 1; //Span two cols horizontally, 1 vertically
-        gbc.weightx = 1.0; gbc.weighty = cheeseYWeight;
-        sharedFiltersPanel.add(cheesePromptAndSelectorPanel, gbc);
-
-        //PRICE PANEL
-        gbc.gridx = 0; gbc.gridy = 2; //(0,2)
-        gbc.gridwidth = spanBothColumns; gbc.gridheight = 1;
-        gbc.weightx = 1.0; gbc.weighty = priceYWeight;
-        sharedFiltersPanel.add(pricePromptAndSelectorPanel, gbc);
+        sharedFiltersPanel.add(picklesAndTomatoPanel);
+        sharedFiltersPanel.add(proteinPromptAndSelectorPanel);
+        sharedFiltersPanel.add(cheesePromptAndSelectorPanel);
+        sharedFiltersPanel.add(pricePromptAndSelectorPanel);
 
         return sharedFiltersPanel;
     }
 
     /**
-     * Creates the SaladFiltersPanel, a series of nested panels held at the top level in a GridBagLayout.
+     * Creates the SaladFiltersPanel, a series of nested panels held at the top level in a GridLayout.
      * <p>Layout is:
      * <li>NW dressing selector with combobox</li>
      * <li>W between dressing and cucumber, small vertical glue</li>
@@ -211,111 +167,53 @@ public class FilterEntryPanel {
      * @return JPanel with all salad-only filters
      */
     private JPanel makeSaladFiltersPanel() {
-        JPanel saladFiltersPanel = new JPanel(new GridBagLayout);
+        JPanel saladFiltersPanel = new JPanel(new GridLayout(1,2));
 
+        //CREATE THE 3 CORE COMPONENTS
         JPanel leafyGreensSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.LEAFY_GREENS);
-
-        //CUCUMBER PROMPT AND BUTTONS
         JPanel cucumberPromptAndSelectorPanel = makeCucumberPromptAndSelectorPanel();
-
         JPanel dressingPromptAndSelectorPanel = makeDressingPromptAndSelectorPanel();
 
-        // Overall weightX values--must add to 1.0
-        double leafyGreensWeightX = 0.5;
-        double horizontalFillerWeightX = 0.2;
-        double firstColWeightX = 0.3;
+        //COMPOSE THE LEFT SIDE OF THE PANEL - DRESSING, SPACER AND CUCUMBERS
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,10));
+//        JLabel blankLabel = new JLabel();
+//        blankLabel.setOpaque(false);
+        leftPanel.add(dressingPromptAndSelectorPanel, BorderLayout.NORTH);
+//        leftPanel.add(blankLabel);
+        leftPanel.add(cucumberPromptAndSelectorPanel, BorderLayout.CENTER);
 
-        // First col weight y values--must add to 1.0
-        double firstColFillerWeightY = 0.2;
-        double dressingWeightY = 0.4;
-        double cucumberWeightY = 0.4;
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridwidth = 1; // All grid widths are 1
-
-        // CUCUMBER BUTTONS PANEL
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridheight = (int) (dressingWeightY * 10); //take the first 4 rows in the first col
-        gbc.weightx = firstColWeightX;
-        gbc.weighty = dressingWeightY;
-        gbc.fill = GridBagConstraints.BOTH;
-        saladFiltersPanel.add(dressingPromptAndSelectorPanel, gbc);
-
-        //VERTICAL FILLER GLUE BETWEEN DRESSING (TOP) AND CUCUMBER BUTTONS (BELOW)
-        gbc.gridx = 0;
-        gbc.gridy = (int) (dressingWeightY * 10); //Start from where the dressing finished vertically
-        gbc.gridheight = (int) (firstColFillerWeightY * 10); //take the next 2 rows in the first col
-        gbc.weightx = firstColWeightX;
-        gbc.weighty = firstColFillerWeightY;
-        saladFiltersPanel.add(Box.createVerticalGlue(), gbc);
-
-        //CUCUMBER BUTTONS PANEL
-        gbc.gridx = 0;
-        gbc.gridy = (int) ((dressingWeightY + firstColFillerWeightY) * 10); //Start where the vertical filler ended
-        gbc.weightx = firstColWeightX;
-        gbc.weighty = cucumberWeightY;
-        saladFiltersPanel.add(cucumberPromptAndSelectorPanel, gbc);
-
-        //HORIZONTAL FILLER GLUE BETWEEN DRESSING+CUCUMBER (LEFT) AND LEAFY GREENS (RIGHT)
-        gbc.gridx = 1; gbc.gridy = 0;
-        gbc.gridheight = (int) ((dressingWeightY + firstColFillerWeightY + cucumberWeightY) *10); //stretch across all rows
-        gbc.weightx = horizontalFillerWeightX;
-        gbc.weighty = 1.0;
-        saladFiltersPanel.add(Box.createHorizontalGlue(), gbc);
-
-        //LEAFY GREENS PANEL (RIGHT PORTION OF GRID)
-        gbc.gridx = 2; gbc.gridy = 0;
-        gbc.gridheight = (int) ((dressingWeightY + firstColFillerWeightY + cucumberWeightY) *10); //stretch across all rows
-        gbc.weightx = leafyGreensWeightX;
-        gbc.weighty = 1.0;
-        saladFiltersPanel.add(leafyGreensSelectorPanel, gbc);
+        // COMPOSE AND RETURN THE FINAL PANEL
+        saladFiltersPanel.add(leftPanel);
+        saladFiltersPanel.add(leafyGreensSelectorPanel);
 
         return saladFiltersPanel;
     }
 
     /**
      * Composes the bun and sauces prompt and selector panels into a single panel for burger-only filters.
-     * This is a GridBagLayout that looks like:
-     * <li>LEFT 30% bun selection, top anchored and horizontal stretch</li>
-     * <li>20% empty glue</li>
-     * <li>RIGHT 50% sauces multi-selector</li>
+     * This is a nested GridLayout where the RIGHT 50% goes to the sauces multi-selector,
+     * and the LEFT is shared equally between the bun prompt selector and an empty label.
+//     * This is a GridBagLayout that looks like:
+//     * <li>LEFT 30% bun selection, top anchored and horizontal stretch</li>
+//     * <li>20% empty glue</li>
+//     * <li>RIGHT 50% sauces multi-selector</li>
      * @return JPanel for all burger-only filter selection
      */
     private JPanel makeBurgerFiltersPanel() {
-        JPanel burgerFiltersPanel = new JPanel(new GridBagLayout());
+        JPanel burgerFiltersPanel = new JPanel(new GridLayout(1,2));
 
         JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
         JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCE_S);
 
-        // Values must add up to 1; allows easy base10 conversion for grid position
-        double bunWeightX = 0.3;
-        double sauceWeightX = 0.5;
-        double fillerWeightX = 0.2; //fill weight between bun and sauce selection
+        JPanel bunsAndSpacerPanel = new JPanel(new GridLayout(1,2));
+        JLabel bunSpacerLabel = new JLabel();
+        bunSpacerLabel.setOpaque(false);
+        bunSpacerLabel.add(bunPromptAndSelectorPanel);
+        bunsAndSpacerPanel.add(bunSpacerLabel);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        // Bun selector takes up the first 30% of the horizontal area. It's anchored to the top of
-        // the grid and fills horizontally.
-        gbc.gridx = 0; gbc.gridy = 0; //(0,0)
-        gbc.gridwidth = (int) (bunWeightX * 10); gbc.gridheight = 1;
-        gbc.weightx = bunWeightX; gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTH;
-        burgerFiltersPanel.add(bunPromptAndSelectorPanel, gbc);
-
-        // Filler glue between the two panels
-        gbc.gridx = 1; gbc.gridy = 0;
-        gbc.gridwidth = 1; gbc.gridheight = 1;
-        gbc.weightx = fillerWeightX; gbc.weighty = 1.0;
-        burgerFiltersPanel.add(Box.createHorizontalGlue(), gbc);
-
-        //Sauce selector takes up the right-most 50% of the horizontal area.
-        gbc.gridx = 2;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1; gbc.gridheight = 1;
-        gbc.weightx = sauceWeightX; gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        burgerFiltersPanel.add(saucePromptAndSelectorPanel, gbc);
+        burgerFiltersPanel.add(bunsAndSpacerPanel);
+        burgerFiltersPanel.add(saucePromptAndSelectorPanel);
 
         return  burgerFiltersPanel;
     }
@@ -391,31 +289,37 @@ public class FilterEntryPanel {
      * @return JPanel with, importantly, ButtonGroup tomatoGroup (Y/N/Don't Mind) and pickleCheckBox
      */
     private JPanel makePicklesAndTomatoSelectorPanel() {
-        JPanel picklesAndTomatoPanel = new JPanel(new GridLayout(2, 2)); //PANEL TO RETURN
+        JPanel picklesAndTomatoPanel = new JPanel(new BorderLayout()); //PANEL TO RETURN
 
         //TOMATOES PROMPT AND BUTTONS
         JLabel tomatoPromptLabel = new JLabel(Filter.TOMATO.filterPrompt());
-        JRadioButton tomatoButton1 = new JRadioButton(YesNoSkipValidStrings.YES.toString());
-        JRadioButton tomatoButton2 = new JRadioButton(YesNoSkipValidStrings.NO.toString());
-        JRadioButton tomatoButton3 = new JRadioButton(YesNoSkipValidStrings.I_DONT_MIND.toString());
+        JRadioButton tomatoButton1 = new JRadioButton(YesNoSkipValidButtonStrings.YES.toString());
+        JRadioButton tomatoButton2 = new JRadioButton(YesNoSkipValidButtonStrings.NO.toString());
+        JRadioButton tomatoButton3 = new JRadioButton(YesNoSkipValidButtonStrings.I_DONT_MIND.toString());
         //Register with the tomato ButtonGroup; NB THIS IS THE FIELD TOMATOGROUP
         this.tomatoGroup.add(tomatoButton1);
         this.tomatoGroup.add(tomatoButton2);
         this.tomatoGroup.add(tomatoButton3);
-        //Create holding Panel and add relevant buttons.
-        JPanel tomatoButtonsPanel = new JPanel(new GridLayout(1, 3));
+
+        //ORGANISE THE TOMATO BUTTONS IN A VERTICAL GRID
+        JPanel tomatoButtonsPanel = new JPanel(new GridLayout(3, 1));
         tomatoButtonsPanel.add(tomatoButton1);
         tomatoButtonsPanel.add(tomatoButton2);
         tomatoButtonsPanel.add(tomatoButton3);
 
-        // PICKLES PROMPT AND CHECKBOX
-        JLabel picklePromptLabel = new JLabel(Filter.PICKLES.filterPrompt());
+        //PUT THE TOMATO PROMPT AND BUTTONS IN A CONTAINER TOGETHER
+        JPanel tomatoSection = new JPanel(new BorderLayout());
+        tomatoSection.add(tomatoPromptLabel, BorderLayout.NORTH);
+        tomatoSection.add(tomatoButtonsPanel, BorderLayout.CENTER);
 
-        //COMPILE THE COMBINED PICKLES AND TOMATO PANEL
-        picklesAndTomatoPanel.add(tomatoPromptLabel); //Position (1,1)
-        picklesAndTomatoPanel.add(tomatoButtonsPanel); //Position (1,2)
-        picklesAndTomatoPanel.add(picklePromptLabel); //Position (2,1)
-        picklesAndTomatoPanel.add(this.pickleCheckBox); //Position (2,2) NB ADDS THE FIELD VARIABLE
+        // ***PICKLE SECTION***
+        JPanel pickleSection = new JPanel(new BorderLayout());
+        JLabel picklePromptLabel = new JLabel(Filter.PICKLES.filterPrompt());
+        pickleSection.add(picklePromptLabel, BorderLayout.NORTH);
+        pickleSection.add(this.pickleCheckBox, BorderLayout.CENTER);
+
+        picklesAndTomatoPanel.add(pickleSection, BorderLayout.CENTER);
+        picklesAndTomatoPanel.add(tomatoSection, BorderLayout.SOUTH);
 
         return  picklesAndTomatoPanel;
     }
@@ -429,9 +333,9 @@ public class FilterEntryPanel {
      * @return JPanel with JLabel and nested JPanel for radio buttons
      */
     private JPanel makeCucumberPromptAndSelectorPanel(){
-        JRadioButton cucumberButton1 = new JRadioButton(YesNoSkipValidStrings.YES.toString());
-        JRadioButton cucumberButton2 = new JRadioButton(YesNoSkipValidStrings.NO.toString());
-        JRadioButton cucumberButton3 = new JRadioButton(YesNoSkipValidStrings.I_DONT_MIND.toString());
+        JRadioButton cucumberButton1 = new JRadioButton(YesNoSkipValidButtonStrings.YES.toString());
+        JRadioButton cucumberButton2 = new JRadioButton(YesNoSkipValidButtonStrings.NO.toString());
+        JRadioButton cucumberButton3 = new JRadioButton(YesNoSkipValidButtonStrings.I_DONT_MIND.toString());
         //Register with the cucumber ButtonGroup; NB THIS IS THE FIELD CUCUMBERGROUP
         this.cucumberGroup.add(cucumberButton1);
         this.cucumberGroup.add(cucumberButton2);
@@ -510,7 +414,7 @@ public class FilterEntryPanel {
      */
     private List<Object> getOptionsOrFail(Map<Filter, List<Object>> optionsMap, Filter filter) {
         List<Object> options = optionsMap.get(filter);
-        if (options == null || options.size() < 1) {
+        if (options == null || options.isEmpty()) {
             System.err.println(
                     "Error: the filter selections failed to populate at FilterEntryPanel construction when "
                             +"getting available selector options for " + filter);
@@ -549,15 +453,15 @@ public class FilterEntryPanel {
         String selection = getSelectedButtonText(buttonGroup);
 
         //valid 'Skip' choice by not selecting or selecting 'I Don't Mind'
-        if  (selection == null || selection.equals(YesNoSkipValidStrings.I_DONT_MIND.toString())) {
+        if  (selection == null || selection.equals(YesNoSkipValidButtonStrings.I_DONT_MIND.toString())) {
             return null;
-        } else if (selection.equals(YesNoSkipValidStrings.YES.toString())) {
+        } else if (selection.equals(YesNoSkipValidButtonStrings.YES.toString())) {
             return true;
-        } else if (selection.equals(YesNoSkipValidStrings.NO.toString())) {
+        } else if (selection.equals(YesNoSkipValidButtonStrings.NO.toString())) {
             return false;
         } else {
             StringJoiner sj = new StringJoiner(", ");
-            for (YesNoSkipValidStrings enumValue : YesNoSkipValidStrings.values()) {sj.add(enumValue.toString());}
+            for (YesNoSkipValidButtonStrings enumValue : YesNoSkipValidButtonStrings.values()) {sj.add(enumValue.toString());}
 
             throw new IllegalStateException("Invalid ButtonGroup passed to getYesNoSkipButtonGroupSelection."
                     +"Expected buttons with text "+ sj + "but there was a button called '" + selection + "'");
@@ -571,7 +475,7 @@ public class FilterEntryPanel {
      * Gets the populated corePanel to add to a external class' Frame
      * @return a JPanel populated to function as a filter entry panel, with relevant fields for interim selection storage.
      */
-    public JPanel getCorePanel(){
+    public JPanel getView(){
         return this.corePanel;
     }
 
