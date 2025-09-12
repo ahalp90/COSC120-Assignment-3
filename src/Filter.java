@@ -97,6 +97,26 @@ public enum Filter {
     }
 
     /**
+     * Attempt to optimise search by ordering by most restrictive binary filters first
+     * @return int of the item's search order.
+     */
+    public int searchOrder() {
+        return switch (this) {
+            case TYPE -> 1;
+            case PICKLES -> 2;
+            case CUCUMBER -> 3;
+            case TOMATO -> 4;
+            case BUN -> 5;
+            case SAUCE_S -> 6;
+            case DRESSING -> 7;
+            case CHEESE -> 8;
+            case PROTEIN -> 9;
+            case LEAFY_GREENS -> 10;
+            default -> Integer.MAX_VALUE; //Any new menu entries will just go to the back of the queue.
+        };
+    }
+
+    /**
      * Identifies Filters that do not have dedicated Enums of their possible values and cannot
      * be represented by a simple true/false/null distinction.
      * @return true if menu data is needed for filter, false otherwise.

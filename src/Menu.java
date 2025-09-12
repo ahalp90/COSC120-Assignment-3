@@ -10,7 +10,7 @@ public final class Menu {
         this.menu.add(menuItem);
     }
 
-    public Set<Object> getAllIngredientTypes(Filter filter){
+    public List<Object> getAllIngredientTypes(Filter filter){
         Set<Object> allSubtypes = new LinkedHashSet<>();
         for(MenuItem menuItem: menu){
             if(menuItem.getDreamMenuItem().getAllFilters().containsKey(filter)){
@@ -19,8 +19,9 @@ public final class Menu {
                 else allSubtypes.add(menuItem.getDreamMenuItem().getFilter(filter));
             }
         }
-        allSubtypes.add("I don't mind");
-        return allSubtypes;
+        List<Object> deduplicatedIngredientsForThisFilter = new ArrayList<>(allSubtypes);
+        deduplicatedIngredientsForThisFilter.add("I don't mind");
+        return List.copyOf(deduplicatedIngredientsForThisFilter);
     }
 
     public List<MenuItem> findMatch(DreamMenuItem dreamMenuItem){
@@ -30,7 +31,7 @@ public final class Menu {
             if(menuItem.getPrice()<dreamMenuItem.getMinPrice()|| menuItem.getPrice()>dreamMenuItem.getMaxPrice()) continue;
             matching.add(menuItem);
         }
-        return matching;
+        return List.copyOf(matching);
     }
 
     public Set<MenuItem> getMenuItems(){return Set.copyOf(menu);}

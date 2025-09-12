@@ -79,7 +79,8 @@ public class MenuSearcher implements GuiListener {
         //identified by their own Enums or by a Boolean/boolean
         for (Filter thisFilter : Filter.values()) {
             if (thisFilter.needsMenuDataForSelectorOptions()){
-                filterOptions.put(thisFilter, List.copyOf(this.menu.getAllIngredientTypes(thisFilter)));
+                //Already returns an immutable List--just put it in the Map.
+                filterOptions.put(thisFilter, this.menu.getAllIngredientTypes(thisFilter));
             }
         }
 
@@ -272,7 +273,7 @@ public class MenuSearcher implements GuiListener {
             String[] info = fileContents.get(i).split("\\[");
             String[] singularInfo = info[0].split(",");
 
-            String cheeseRaw =  info[1].replace("]","");
+            String cheesesRaw =  info[1].replace("]", "");
             String leafyGreensRaw = info[2].replace("]","");
             String saucesRaw = info[3].replace("]","");
             String description = info[4].replace("]","");
@@ -283,27 +284,30 @@ public class MenuSearcher implements GuiListener {
             try{
                 type = Type.valueOf(singularInfo[1].toUpperCase().strip());
             }catch (IllegalArgumentException e){
-                System.out.println("Error in file. Type data could not be parsed for item on line "+(i+1)+". Terminating. \nError message: "+e.getMessage());
+                System.out.println("Error in file. Type data could not be parsed for item on line "+(i+1)
+                        +". Terminating. \nError message: "+e.getMessage());
                 System.exit(0);
             }
 
-            String menuItemName = singularInfo[2];
+            String menuItemName = capitaliseFirstLettersOnly(singularInfo[2].strip());
 
             double price = 0;
             try{
                 price = Double.parseDouble(singularInfo[3]);
             }catch (NumberFormatException n){
-                System.out.println("Error in file. Price could not be parsed for item on line "+(i+1)+". Terminating. \nError message: "+n.getMessage());
+                System.out.println("Error in file. Price could not be parsed for item on line "+(i+1)
+                        +". Terminating. \nError message: "+n.getMessage());
                 System.exit(0);
             }
 
-            String bun = singularInfo[4].toLowerCase().strip();
+            String bun = capitaliseFirstLettersOnly(singularInfo[4].toLowerCase().strip());
 
             Protein protein = null;
             try {
                 protein = Protein.valueOf(singularInfo[5].toUpperCase());
             }catch (IllegalArgumentException e){
-                System.out.println("Error in file. Protein data could not be parsed for item on line "+(i+1)+". Terminating. \nError message: "+e.getMessage());
+                System.out.println("Error in file. Protein data could not be parsed for item on line "+(i+1)
+                        +". Terminating. \nError message: "+e.getMessage());
                 System.exit(0);
             }
 
@@ -323,41 +327,63 @@ public class MenuSearcher implements GuiListener {
             try {
                 dressing = Dressing.valueOf(singularInfo[9].toUpperCase().replace(" ","_"));
             }catch (IllegalArgumentException e){
-                System.out.println("Error in file. Dressing data could not be parsed for item on line "+(i+1)+". Terminating. \nError message: "+e.getMessage());
+                System.out.println("Error in file. Dressing data could not be parsed for item on line "+(i+1)
+                        +". Terminating. \nError message: "+e.getMessage());
                 System.exit(0);
             }
 
-            Set<String> leafyGreens = new HashSet<>();
-            for(String l: leafyGreensRaw.split(",")){
-                leafyGreens.add(l.toLowerCase().strip());
+            //CHEESES - only add to the Cheeses set if there's a non-blank entry in the closure that's not NA
+            Set<String> cheeses = new HashSet<>();
+            for (String c : cheesesRaw.split(",")){
+                String cheeseStrip = c.strip();
+                if (!cheeseStrip.isBlank() && !cheeseStrip.equalsIgnoreCase("NA")){
+                    cheeses.add(capitaliseFirstLettersOnly(cheeseStrip));
+                }
             }
 
+            //LEAFY GREENS - only add to the Leafy Greens set if there's a non-blank entry in the closure that's not NA
+            Set<String> leafyGreens = new HashSet<>();
+            for(String l: leafyGreensRaw.split(",")){
+                String leafyGreensStrip = l.strip();
+                if (!leafyGreensStrip.isBlank() && !leafyGreensStrip.equalsIgnoreCase("NA")){
+                    leafyGreens.add(capitaliseFirstLettersOnly(leafyGreensStrip));
+                }
+
+            }
+
+            //SAUCES - only add sauces if it's a non-blank and non-NA entry.
             Set<Sauce> sauces = new HashSet<>();
             for(String s: saucesRaw.split(",")){
-                Sauce sauce = null;
-                try {
-                    sauce = Sauce.valueOf(s.toUpperCase().strip());
-                }catch (IllegalArgumentException e){
-                    System.out.println("Error in file. Sauce/s data could not be parsed for item on line "+(i+1)+". Terminating. \nError message: "+e.getMessage());
-                    System.exit(0);
+                String cleanSauce = s.strip().toUpperCase();
+                if (!cleanSauce.isEmpty() && !cleanSauce.equalsIgnoreCase("NA")){
+                    try{
+                        sauces.add(Sauce.valueOf(cleanSauce));
+                    } catch (IllegalArgumentException e){
+                        System.out.println("Error in file. Sauce/s data could not be parsed for item on line "+(i+1)
+                                +". Terminating. \nError message: "+e.getMessage());
+                        System.exit(0);
+                    }
                 }
-                sauces.add(sauce);
             }
 
             Map<Filter,Object> filterMap = new LinkedHashMap<>();
+
             filterMap.put(Filter.TYPE,type);
-            if(type.equals(Type.BURGER)){
-                filterMap.put(Filter.BUN, bun);
-                if(sauces.size()>0) filterMap.put(Filter.SAUCE_S,sauces);
-            }
-            Set<Protein> single_protein = new HashSet<>();
-            single_protein.add(protein);
-            filterMap.put(Filter.PROTEIN,single_protein);
+            filterMap.put(Filter.PROTEIN, protein);
             filterMap.put(Filter.PICKLES, pickles);
             filterMap.put(Filter.TOMATO, tomato);
+            //Only add the cheeses set if it's not empty--otherwise it's meaningless
+            if (!cheeses.isEmpty()) filterMap.put(Filter.CHEESE, Set.copyOf(cheeses));
+
+            if(type.equals(Type.BURGER)){
+                filterMap.put(Filter.BUN, bun);
+                //only add the sauces set if it's not empty--otherwise it's meaningless
+                if(!sauces.isEmpty()) filterMap.put(Filter.SAUCE_S,Set.copyOf(sauces));
+            }
+
             if(type.equals(Type.SALAD)){
                 filterMap.put(Filter.DRESSING,dressing);
-                filterMap.put(Filter.LEAFY_GREENS,leafyGreens);
+                filterMap.put(Filter.LEAFY_GREENS,Set.copyOf(leafyGreens));
                 filterMap.put(Filter.CUCUMBER, cucumber);
             }
 
@@ -366,6 +392,40 @@ public class MenuSearcher implements GuiListener {
             menu.addItem(menuItem);
         }
         return menu;
+    }
+
+    /**
+     * Capitalise the first letter of each word in a string, and make following letters lowercase.
+     * <p> Sends to uppercase some common abbreviations.
+     * Adapted with minor modification from this tutorial:
+     * https://www.geeksforgeeks.org/java/java-program-to-capitalize-the-first-letter-of-each-word-in-a-string/
+     * Code copied verbatim from Ariel Halperin, UNE COSC120, Assignment 2,
+     * MenuSearcher, capitaliseFirstLettersOnly(String input)
+     *
+     * @param input the String to be modified.
+     * @return the String in the desired (capitalised[0]lowercase[1:]) format.
+     */
+    private static String capitaliseFirstLettersOnly(String input) {
+        // Don't operate on null or blank strings.
+        if (input == null || input.isBlank()) return input;
+
+        Set<String> abbreviations = Set.of("NA", "N/A");
+
+        String[] words = input.split("\\s+"); // Split words on whitespace of any length
+        // Rebuild words in string, splitting char0 and the rest of the word.
+        StringBuilder sb = new StringBuilder();
+
+        for (String word : words) {
+            if (abbreviations.contains(word.toUpperCase())) {
+                sb.append(word.toUpperCase());
+            } else {
+                sb.append(Character.toUpperCase(word.charAt(0)));
+                // Only apply to words with more than one letter. Avoid possible IndexOutOfBoundsException.
+                if (word.length() > 1) sb.append(word.substring(1).toLowerCase());
+            }
+            sb.append(" ");
+        }
+        return sb.toString().trim(); //trims last whitespace and any leading whitespace.
     }
 
     /**
