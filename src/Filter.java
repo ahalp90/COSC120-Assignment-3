@@ -22,20 +22,21 @@ public enum Filter {
 
     /**
      * Identifies the intended text prompt for filter selection.
+     * <p>HTML-ified.
      * @return String of the filter prompt.
      */
     public String filterPrompt() {
         return switch (this) {
-            case TYPE -> "Select item type:";
-            case BUN -> "Bun choice:";
-            case PROTEIN -> "Proteins:";
-            case CHEESE -> "Cheese:";
-            case PICKLES -> "Pickles?";
-            case CUCUMBER -> "Cucumber?";
-            case TOMATO -> "Tomato?";
-            case DRESSING -> "Dressing?";
-            case LEAFY_GREENS -> "Leafy greens?";
-            case SAUCE_S -> "Sauces?";
+            case TYPE -> "<html><b>Select item type:</b></html>";
+            case BUN -> "<html><b>Bun choice?</b</html>";
+            case PROTEIN -> "<html><b>Proteins?</b> <i>(hold ctrl to select >1)</i></html>";
+            case CHEESE -> "<html><b>Cheese:</b></html>";
+            case PICKLES -> "<html><b>Pickles?</b></html>";
+            case CUCUMBER -> "<html><b>Cucumber?</b></html>";
+            case TOMATO -> "<html><b>Tomato?</b></html>";
+            case DRESSING -> "<html><b>Dressing?</b></html>";
+            case LEAFY_GREENS -> "<html><b>Leafy greens?</b> <i>(hold ctrl to select >1)</i></html>";
+            case SAUCE_S -> "<html><b>Sauces?</b> <i>(hold ctrl to select >1)</i></html>";
         };
     }
 

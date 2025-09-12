@@ -238,6 +238,15 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
     }
 
     private void performSearch() {
+
+        //First check that all type-relevant filters had a selection
+        String missingFilterPanelSelections = this.filterEntryPanel.getMissingSelectionsMessage();
+        if (!missingFilterPanelSelections.isBlank()) {
+            JOptionPane.showMessageDialog(frame, missingFilterPanelSelections,
+                    "Incomplete Selections", JOptionPane.WARNING_MESSAGE);
+            return; //short-circuit
+        }
+
         //Get raw data from the core view panel
         FilterSelections selections = filterEntryPanel.getFilterSelections();
 

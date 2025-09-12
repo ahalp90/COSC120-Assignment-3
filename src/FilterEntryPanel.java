@@ -10,8 +10,8 @@ import java.util.List;
  * <li>SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
  * <li>BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
  *
- * <li>I DON'T MIND SELECTORS: BUN, SAUCE_S,LEAFY_GREENS, CUCUMBER, DRESSING, PROTEIN, TOMATO
- * <li>ALLOWS EXPLICIT 'NONE' SELECTION: TOMATO, CUCUMBER, PICKLES, SAUCES, PROTEINS AND LEAFY_GREENS
+ * <li>I DON'T MIND SELECTORS: BUN, PROTEIN, CHEESE, CUCUMBER, TOMATO, DRESSING, LEAFY GREENS, SAUCES
+ * <li>ALLOWS EXPLICIT 'NONE' SELECTION: PROTEIN, CHEESE, LEAFY GREENS, SAUCES
  *
  */
 public class FilterEntryPanel {
@@ -61,6 +61,8 @@ public class FilterEntryPanel {
         leafyGreensList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         proteinList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
+        setupJListSelectionListeners();
+
         // *** INITIALISE THE CORE PANEL TO WHICH EVERYTHING WILL BE ADDED ***
         this.corePanel = new JPanel();
 
@@ -68,14 +70,19 @@ public class FilterEntryPanel {
         CardLayout typeSpecificCardLayout = new CardLayout();
         JPanel typeSpecificFilterCardsPanel = new JPanel(typeSpecificCardLayout);
 
+        setupItemTypeSelectorListener(typeSpecificCardLayout, typeSpecificFilterCardsPanel);
 
         //BUILD THE COMPONENTS AND OVERALL LAYOUT
         buildLayout(typeSpecificFilterCardsPanel);
+    }
 
-        //LISTENER FOR TYPE STATE--BURGER OR SALAD; FLIPS VARIABLE COMPONENTS TO RELEVANT CARD
-        //NB. This was originally added at the point of the itemType panel's construction, but IntelliJ
-        //grumbled because this should happen at a point where both the CardLayout and
-        //itemTypeSelector are known to the method.
+
+    /**
+     * Helper that adds an ActionListener to the itemTypeSelector to show the appropriate card layout for Burger/Salad
+     * @param typeSpecificCardLayout the CardLayout
+     * @param typeSpecificFilterCardsPanel the JPanel that holds the CardLayout to flip
+     */
+    private void setupItemTypeSelectorListener(CardLayout typeSpecificCardLayout, JPanel typeSpecificFilterCardsPanel) {
         itemTypeSelector.addActionListener(e -> {
             Type selectedType = (Type) itemTypeSelector.getSelectedItem();
             //This could be simplified to a ternary expression, but the explicit cases for both
@@ -88,7 +95,10 @@ public class FilterEntryPanel {
         });
     }
 
-
+    /**
+     * Calls the relevant helper factories to build all sub-Components, and then arranges global layout.
+     * @param typeSpecificFilterCardsPanel the JPanel that holds core CardLayout for switching views.
+     */
     private void buildLayout(JPanel typeSpecificFilterCardsPanel) {
         this.corePanel.setLayout(new GridBagLayout());
         this.corePanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10)); // Give it some breathing room.
@@ -107,11 +117,11 @@ public class FilterEntryPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.BOTH; //global values
 
-        gbc.gridy = 0; gbc.weighty = 0.1; this.corePanel.add(typeFilterPanel, gbc);
+        gbc.gridy = 0; gbc.weighty = 0.1; this.corePanel.add(typeFilterPanel, gbc); //give it a sliver up top
 
-        gbc.gridy = 2; gbc.weighty = 0.35; this.corePanel.add(typeSpecificFilterCardsPanel, gbc);
+        gbc.gridy = 2; gbc.weighty = 0.35; this.corePanel.add(typeSpecificFilterCardsPanel, gbc); //gets a good chunk
 
-        gbc.gridy = 1; gbc.weighty = 0.55; this.corePanel.add(sharedFiltersPanel, gbc);
+        gbc.gridy = 1; gbc.weighty = 0.55; this.corePanel.add(sharedFiltersPanel, gbc); //gets most space
     }
 
 
@@ -264,8 +274,8 @@ public class FilterEntryPanel {
         JPanel priceSelectorPanel = new JPanel();
         priceSelectorPanel.setLayout(new BoxLayout(priceSelectorPanel, BoxLayout.X_AXIS));
 
-        JLabel priceMinLabel = new JLabel("Min. price: $");
-        JLabel priceMaxLabel = new JLabel("Max. price: $");
+        JLabel priceMinLabel = new JLabel("<html><b>Min. price: $</b></html>");
+        JLabel priceMaxLabel = new JLabel("<html><b>Max. price: $</b></html>");
 
         priceSelectorPanel.add(priceMinLabel);
         priceSelectorPanel.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -482,6 +492,67 @@ public class FilterEntryPanel {
         }
     }
 
+    /**
+     * Sets up the JList selectors with ListSelectionListeners.
+     * <p>They'll call handleSpecialSelections() to check for and deal with NONE or I_DONT_MIND selections.
+     */
+    private void setupJListSelectionListeners() {
+        //getValueIsAdjusting to only trigger after a selection event is completed:
+        //https://docs.oracle.com/javase/8/docs/api/javax/swing/ListSelectionModel.html
+        sauceList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                handleSpecialSelections(sauceList, Filter.SAUCE_S.getDontMindValue());
+            }
+        });
+
+        proteinList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                handleSpecialSelections(proteinList, Filter.PROTEIN.getDontMindValue());
+            }
+        });
+
+        leafyGreensList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                handleSpecialSelections(leafyGreensList, Filter.LEAFY_GREENS.getDontMindValue());
+            }
+        });
+    }
+
+    /**
+     * Helper to handle selection of SpecialChoices in JLists.
+     * <li>Clears the list and shows an error if I_DONT_MIND and NONE are simultaneously selected. Shows a warning message too.
+     * <li>If only one of I_DONT_MIND or NONE is selected, clears all other selections.
+     * @param selector the JList of Objects that has been selected
+     * @param dontMindValue the Filter's particular value for I_DONT_MIND or equivalent.
+     */
+    private void handleSpecialSelections(JList<Object> selector, Object dontMindValue) {
+        List<Object> selected = selector.getSelectedValuesList();
+
+        boolean hasExplicitNone = selected.contains(SpecialChoice.NONE);
+        boolean hasDontMind = selected.contains(dontMindValue);
+
+        //Invokelater because gui behaviour is happening mixed with logical state change.
+        if (hasExplicitNone && hasDontMind) {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        corePanel,
+                        "Cannot select '" + SpecialChoice.NONE + "' and '" + dontMindValue + "' together."
+                                +"\nPlease choose one or the other.",
+                        "Invalid Selection",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                selector.clearSelection();
+            });
+        }
+
+        if (((hasExplicitNone || hasDontMind)) && selected.size() > 1) {
+            SwingUtilities.invokeLater(() -> {
+                if (hasExplicitNone) selector.setSelectedValue(SpecialChoice.NONE, true);
+                else  selector.setSelectedValue(dontMindValue, true);
+            });
+        }
+    }
+
 
     //                  *** PUBLIC GETTERS ***
 
@@ -495,7 +566,7 @@ public class FilterEntryPanel {
 
     public FilterSelections getFilterSelections(){
         return new FilterSelections(
-                (Type) itemTypeSelector.getSelectedItem(),
+                (Type) itemTypeSelector.getSelectedItem(), //Type is always concrete, so might as well recast directly.
                 bunSelector.getSelectedItem(),
                 Set.copyOf(sauceList.getSelectedValuesList()),
                 dressingSelector.getSelectedItem(),
@@ -510,4 +581,63 @@ public class FilterEntryPanel {
         );
     }
 
+    /**
+     * Identifies if any selectors relevant to the Type were missing a selection.
+     * <p>Creates a String of the missing selections within an appropriate error message
+     * <p>Doubles as a boolean check by empty String return if all are selected.
+     * @return String with message if selectors are missing, <b>or empty String</b> if all selectors have selections
+     */
+    public String getMissingSelectionsMessage() {
+        //Hold the identifiers for missing selectors before appending to return String.
+        List<String> missing = new ArrayList<>();
+
+        //Get the Type selected first for branching panel display/check logic
+        Type selectedType =  (Type) itemTypeSelector.getSelectedItem();
+
+        if (selectedType == null) missing.add("Type");
+
+        //GENERAL FILTERS
+        if (proteinList.getSelectedValuesList().isEmpty()) missing.add("Protein");
+        if (getSelectedButtonText(tomatoGroup) == null) missing.add("Tomato");
+        if (cheeseSelector.getSelectedItem() == null) missing.add("Cheese");
+        //pickleCheckBox is always checked or unchecked (boolean)
+
+        //TYPE-SPECIFIC FILTERS
+        if (selectedType == Type.BURGER) {
+            if (sauceList.getSelectedValuesList().isEmpty()) missing.add("Sauce");
+            if (bunSelector.getSelectedItem() == null) missing.add("Bun");
+        } else if (selectedType == Type.SALAD) {
+            if (leafyGreensList.getSelectedValuesList().isEmpty()) missing.add("Leafy Greens");
+            if (getSelectedButtonText(cucumberGroup) == null) missing.add("Cucumber");
+            if (dressingSelector.getSelectedItem() == null) missing.add("Dressing");
+        }
+
+        if (missing.isEmpty()) return ""; //Return empty String if all relevant selectors had selections.
+
+        // If selectors were missing selections
+        return "Please make a selection for: " + String.join(", ", missing) +
+                "\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
+                +"\nor '" +SpecialChoice.NONE + "'if you know you don't want this item in your food.";
+
+    }
+
+    //                                  *** PUBLIC SETTERS ***
+
+    /**
+     * Clear all selections. Intended for use when navigating back here from a different view.
+     */
+    public void clearSelections() {
+        itemTypeSelector.setSelectedIndex(-1);
+        bunSelector.setSelectedIndex(-1);
+        sauceList.clearSelection();
+        dressingSelector.setSelectedIndex(-1);
+        leafyGreensList.clearSelection();
+        proteinList.clearSelection();
+        tomatoGroup.clearSelection();
+        cucumberGroup.clearSelection();
+        pickleCheckBox.setSelected(false);
+        cheeseSelector.setSelectedIndex(-1);
+        priceMinField.setText("0.00");
+        priceMaxField.setText("0.00");
+    }
 }

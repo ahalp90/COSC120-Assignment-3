@@ -49,14 +49,15 @@ public class DreamMenuItem {
      * Compares the keys and their attendant values (in the case of a match) between the calling
      * MenuItem's DreamMenuItem instance's filterMap and that of a
      * comparison (non-composed) DreamMenuItem instance.
-     * <p>'Skip' as 'any will do' is handled implicitly by not adding the relevant key to the comparison DreamMenuItem's
-     * Map and performing negative conditional checks.
-     * <p> Copied from Ariel Halperin, COSC120 A2, DreamPlant match method. Based on COSC120 matching methods by Andreas Shipley.
+     * <p>User choice of 'I don't mind' means the filter never got added to the criteria search item;
+     * but it probably exists on the menu item.
+     * <p>User choice of 'None' means the filter got added with a 'None' value to the user search item;
+     * but the menu item will either have no key here (i.e. null) or a false boolean
+     * <p> Adapted from Ariel Halperin, COSC120 A2, DreamPlant match method. Based on COSC120 matching methods by Andreas Shipley.
      * @param dreamMenuItem an instance of DreamMenuItem against which the menu item's properties should be compared
      * @return boolean true if two DreamMenuItem instances have overlap at the values of all their shared keys.
      */
     public boolean matches(DreamMenuItem dreamMenuItem) {
-        System.out.println("\n--- Checking Item: " + this.getFilter(Filter.TYPE) + " (" + this.getFilter(Filter.PROTEIN) + ") ---");
 
         // Store references here to contract following syntax.
         Map<Filter, Object> criteriaMap = dreamMenuItem.getAllFilters();
@@ -73,34 +74,31 @@ public class DreamMenuItem {
 
             Object menuItemValue = this.getFilter(criteriaKey);
 
-            System.out.printf("  - Filtering by: %-15s | User wants: [%s] (type: %s) | Item has: [%s] (type: %s)\n",
-                    criteriaKey,
-                    criteriaValue,
-                    (criteriaValue == null ? "null" : criteriaValue.getClass().getSimpleName()),
-                    menuItemValue,
-                    (menuItemValue == null ? "null" : menuItemValue.getClass().getSimpleName())
-            );
+            //***CHECK WHETHER THIS WAS A 'NONE' CHOICE--USER EXPLICITLY DOESN'T WANT ANY ITEMS WITH THIS FILTER***
+            if (criteriaValue.equals(SpecialChoice.NONE)) {
+                if (menuItemValue==null || menuItemValue.equals(false)) continue; // Item didn't have any of these->go to next item
 
-            // Got to get 'menuItemValue' anyway; implicitly check if the criteriaKey exists within the
-            // menu item's Map. 1 step fewer than get + Map.containsKey(criteriaKey).
-            // Idea per discussion at
-            // https://stackoverflow.com/questions/14601016/is-using-java-map-containskey-redundant-when-using-map-get.
-            // If not, exit early. Key in criteria but not inventory currently implausible, but cheap check.
-            // *No other null handling necessary--the Map.copyOf implementation used doesn't allow nulls.*
+                //NB. This shouldn't occur based on current menu load logic, but it's a cheap check for robustness.
+                if (menuItemValue instanceof Collection<?> menuCollection
+                        && (menuCollection.isEmpty() || menuCollection.contains(false))) continue;
 
-            if (menuItemValue ==null) return false;
+                //Search was an explicit 'NONE' but the menu had a value here (other than boolean false).
+                return false;
+            }
+            //None choice within a Collection
+            if (criteriaValue instanceof Collection<?> criteriaCollection) {
+                if (criteriaCollection.contains(SpecialChoice.NONE)) {
+                    if (menuItemValue==null || menuItemValue.equals(false)) continue;
+                    //NB. This shouldn't occur based on current menu load logic, but it's a cheap check for robustness.
+                    if (menuItemValue instanceof Collection<?> menuCollection
+                            && (menuCollection.isEmpty() || menuCollection.contains(false))) continue;
 
-            //CHECK WHETHER THIS WAS A 'NONE' CHOICE AND IT'S A HARD-NO FROM THE USER.
-            if (criteriaKey.equals(SpecialChoice.NONE)) {
-                if (menuItemValue==null) continue; // Item didn't have any of these->go to next item
-
-                if (menuItemValue instanceof Collection<?> menuCollection && menuCollection.isEmpty()) {
-                    continue; //item has empty collection at this value--irrelevant so all good
+                    //Search Collection was an explicit 'NONE' but the menu had a value here (other than boolean false).
+                    return false;
                 }
-
-                return false; //Item had something for this but the user didn't want anything here. Inappropriate match.
             }
 
+            //                      ***REGULAR FILTER CHECKS***
             // If both values are collections, discard if the menu item doesn't have >=1 of the criteria.
             if (menuItemValue instanceof Collection<?> menuCollection
                     && criteriaValue instanceof Collection<?> criteriaCollection) {
@@ -135,10 +133,6 @@ public class DreamMenuItem {
         // The user's criteria instance matched on all included attributes for >=1 value
         // choice. Note, any attributes selected as 'skip' by the user were not added, and so
         // implicitly matched.
-        System.out.println("  >>> SUCCESS: This item is a match! <<<");
         return true;
     }
-
-
-
 }
