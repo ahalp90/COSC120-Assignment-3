@@ -67,7 +67,7 @@ public enum Filter {
             case TYPE -> false;
             case BUN -> false;
             case PROTEIN -> true;
-            case CHEESE -> false;
+            case CHEESE -> true;
             case PICKLES -> false;
             case CUCUMBER -> false;
             case TOMATO -> false;
@@ -81,18 +81,34 @@ public enum Filter {
      * Identifies filter values that allow users to 'skip' filtering by this attribute--i.e. 'I don't mind which'.
      * @return boolean true if allows skipping because 'I don't mind which'.
      */
-    public boolean allowsDontCareChoice() {
+    public boolean allowsDontMindChoice() {
         return switch (this) {
             case TYPE -> false;
             case BUN -> true;
             case PROTEIN -> true;
             case CHEESE -> true;
             case PICKLES -> false;
-            case CUCUMBER -> false;
-            case TOMATO -> false;
+            case CUCUMBER -> true;
+            case TOMATO -> true;
             case DRESSING -> true;
-            case LEAFY_GREENS -> false;
-            case SAUCE_S -> false;
+            case LEAFY_GREENS -> true;
+            case SAUCE_S -> true;
+        };
+    }
+
+    /**
+     * Coordinates the Filters' 'I don't mind'-equivalent values.
+     * <p>This should be guarded behind a call to 'allowsDontMindChoice() to avoid null handling.
+     * @return Object of the value (as String for some and an individual Enum value for others).
+     * <p>null if there is no relevant value
+     */
+    public Object getDontMindValue() {
+        return switch (this) {
+            case DRESSING -> Dressing.NA;
+            case PROTEIN -> Protein.NA;
+            case SAUCE_S -> Sauce.NA;
+            case BUN, CHEESE, LEAFY_GREENS, TOMATO, CUCUMBER -> SpecialChoice.I_DONT_MIND;
+            default -> null;
         };
     }
 

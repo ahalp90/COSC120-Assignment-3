@@ -51,11 +51,13 @@ public class DreamMenuItem {
      * comparison (non-composed) DreamMenuItem instance.
      * <p>'Skip' as 'any will do' is handled implicitly by not adding the relevant key to the comparison DreamMenuItem's
      * Map and performing negative conditional checks.
-     * <p> Copied from Ariel Halperin, COSC120 A2, DreamPlant match method.
+     * <p> Copied from Ariel Halperin, COSC120 A2, DreamPlant match method. Based on COSC120 matching methods by Andreas Shipley.
      * @param dreamMenuItem an instance of DreamMenuItem against which the menu item's properties should be compared
      * @return boolean true if two DreamMenuItem instances have overlap at the values of all their shared keys.
      */
     public boolean matches(DreamMenuItem dreamMenuItem) {
+        System.out.println("\n--- Checking Item: " + this.getFilter(Filter.TYPE) + " (" + this.getFilter(Filter.PROTEIN) + ") ---");
+
         // Store references here to contract following syntax.
         Map<Filter, Object> criteriaMap = dreamMenuItem.getAllFilters();
 
@@ -70,15 +72,34 @@ public class DreamMenuItem {
             Object criteriaValue = criteriaEntry.getValue();
 
             Object menuItemValue = this.getFilter(criteriaKey);
+
+            System.out.printf("  - Filtering by: %-15s | User wants: [%s] (type: %s) | Item has: [%s] (type: %s)\n",
+                    criteriaKey,
+                    criteriaValue,
+                    (criteriaValue == null ? "null" : criteriaValue.getClass().getSimpleName()),
+                    menuItemValue,
+                    (menuItemValue == null ? "null" : menuItemValue.getClass().getSimpleName())
+            );
+
             // Got to get 'menuItemValue' anyway; implicitly check if the criteriaKey exists within the
             // menu item's Map. 1 step fewer than get + Map.containsKey(criteriaKey).
             // Idea per discussion at
             // https://stackoverflow.com/questions/14601016/is-using-java-map-containskey-redundant-when-using-map-get.
             // If not, exit early. Key in criteria but not inventory currently implausible, but cheap check.
             // *No other null handling necessary--the Map.copyOf implementation used doesn't allow nulls.*
-            // However, if design changes made it likely that criteriaMap had keys that an inventory plant didn't,
-            // it would be more efficient to do a contains lookup for all keys before beginning the iterator.
+
             if (menuItemValue ==null) return false;
+
+            //CHECK WHETHER THIS WAS A 'NONE' CHOICE AND IT'S A HARD-NO FROM THE USER.
+            if (criteriaKey.equals(SpecialChoice.NONE)) {
+                if (menuItemValue==null) continue; // Item didn't have any of these->go to next item
+
+                if (menuItemValue instanceof Collection<?> menuCollection && menuCollection.isEmpty()) {
+                    continue; //item has empty collection at this value--irrelevant so all good
+                }
+
+                return false; //Item had something for this but the user didn't want anything here. Inappropriate match.
+            }
 
             // If both values are collections, discard if the menu item doesn't have >=1 of the criteria.
             if (menuItemValue instanceof Collection<?> menuCollection
@@ -114,6 +135,7 @@ public class DreamMenuItem {
         // The user's criteria instance matched on all included attributes for >=1 value
         // choice. Note, any attributes selected as 'skip' by the user were not added, and so
         // implicitly matched.
+        System.out.println("  >>> SUCCESS: This item is a match! <<<");
         return true;
     }
 

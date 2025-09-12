@@ -273,10 +273,12 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
 
     /**
      * Private helper to translate FilterSelections Record to the required format for search by DreamMenuItem.
+     * <p>Calls on its own helpers for tidiness.</p>
      * <p>Contains processing logic for empty and null selections; null (i.e. 'Skip-Any will do') selections are not added.
      * Selections irrelevant to the type are also not added--type relevance informed by Filter Smart Enum.
      * @param selections FilterSelections Record of selections by user.
-     * @return unmodifiable view of the Map created, key Filter, value Object.
+     * @return immutable and not-null Map containing all non-skipped selections,
+     * or SpecialChoice.NONE if they were deliberate NONE selections.
      */
     private Map<Filter, Object> buildFilterMapFromRecord(FilterSelections selections) {
         Map<Filter, Object> filterMap = new HashMap<>();
@@ -288,23 +290,72 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
                     (selectedType == Type.BURGER && filter.isRelevantForBurger()) ||
                             (selectedType == Type.SALAD && filter.isRelevantForSalad());
             if (isRelevant) {
-                Object value = switch (filter) {
-                    case TYPE -> selectedType;
-                    case BUN -> selections.selectedBun();
-                    case SAUCE_S -> selections.selectedSauces().isEmpty() ? null : selections.selectedSauces();
-                    case DRESSING -> selections.selectedDressing();
-                    case LEAFY_GREENS -> selections.selectedLeafyGreens().isEmpty() ? null : selections.selectedLeafyGreens();
-                    case PROTEIN ->  selections.selectedProteins().isEmpty() ? null : selections.selectedProteins();
-                    case TOMATO -> selections.tomatoSelection();
-                    case CUCUMBER -> selections.cucumberSelection();
-                    case PICKLES -> selections.pickleSelection() ? true : null;
-                    case CHEESE -> selections.selectedCheese();
-                };
-
-                if (value != null) filterMap.put(filter, value);
+                Object value = getFilterValue(filter, selections);
+                if (value != null) {
+                    filterMap.put(filter, value);
+                }
             }
         }
-        return Collections.unmodifiableMap(filterMap);
+        return Map.copyOf(filterMap);
+    }
+
+    /**
+     * Associates FilterSelections Record to Filter values.
+     * @param filter the Filter
+     * @param selections the FilterSelections record
+     * @return an Object superclass equivalent of the relevant value within the Record
+     */
+    private Object getRawFilterValue(Filter filter, FilterSelections selections) {
+        return switch (filter) {
+            case TYPE -> selections.selectedType();
+            case BUN -> selections.selectedBun();
+            case SAUCE_S -> selections.selectedSauces();
+            case DRESSING -> selections.selectedDressing();
+            case LEAFY_GREENS -> selections.selectedLeafyGreens();
+            case PROTEIN ->  selections.selectedProteins();
+            case TOMATO -> selections.tomatoSelection();
+            case CUCUMBER -> selections.cucumberSelection();
+            case PICKLES -> selections.pickleSelection();
+            case CHEESE -> selections.selectedCheese();
+            default -> throw new IllegalArgumentException("Unexpected filter at getRawFilterValue: " + filter);
+        };
+    }
+
+    /**
+     * Derives a meaningful value from a FilterSelections record for a particular filter.
+     * <p> Helps distinguish regular choices from special choices (i.e. 'NONE' or 'I_DONT_MIND')
+     * and unpack them from Collections if necessary.
+     * @param filter the Filter being checked
+     * @param selections the FilterSelections Record
+     * @return <li>null if it was intended to be skipped, <li>SpecialChoice.NONE if it was an intended NONE choice,
+     * <li>or the full Collection or original object if it didn't contain either special choice.
+     */
+    private Object getFilterValue(Filter filter, FilterSelections selections) {
+        Object value = getRawFilterValue(filter, selections);
+        if (value == null) return null;
+
+        if (value instanceof Collection<?> collectedValues) {
+            if (filter.allowsDontMindChoice() && collectedValues.contains(filter.getDontMindValue())) {
+                return null; //Don't filter based on this.
+            }
+
+            if (filter.allowsNoneChoice() && collectedValues.contains(SpecialChoice.NONE)) {
+                return SpecialChoice.NONE;
+            }
+
+            return collectedValues; //Obviously a normal selection--return it as is
+        } else {
+            //Now do non-collection objects--i.e. single choice-only selectors
+            if (filter.allowsDontMindChoice() && value.equals(filter.getDontMindValue())) {
+                return null; //Don't filter based on this 'don't mind' choice
+            }
+
+            if  (filter.allowsNoneChoice() && value.equals(SpecialChoice.NONE)) {
+                return SpecialChoice.NONE;
+            }
+
+            return value; //obviously a normal selection--return it.
+        }
     }
 
     private JButton makeImgOnlyButtonWithResize(String imagePath, Dimension size) {

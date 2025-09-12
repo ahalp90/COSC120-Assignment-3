@@ -377,7 +377,8 @@ public class MenuSearcher implements GuiListener {
 
             if(type.equals(Type.BURGER)){
                 filterMap.put(Filter.BUN, bun);
-                //only add the sauces set if it's not empty--otherwise it's meaningless
+                //only add the sauces set if it's not empty--otherwise it's meaningless;
+                //currently all burgers have sauce, but a burger without sauce is conceivable
                 if(!sauces.isEmpty()) filterMap.put(Filter.SAUCE_S,Set.copyOf(sauces));
             }
 

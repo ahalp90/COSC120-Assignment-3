@@ -17,7 +17,7 @@ public enum YesNoSkipValidButtonStrings {
         return switch (this) {
             case YES -> "Yes";
             case NO -> "No";
-            case I_DONT_MIND -> "I Don't Mind";
+            case I_DONT_MIND -> Filter.TOMATO.getDontMindValue().toString(); //TODO FIX BECAUSE THIS IS NOW REDUNDANT***********
         };
     }
 }

@@ -19,9 +19,17 @@ public final class Menu {
                 else allSubtypes.add(menuItem.getDreamMenuItem().getFilter(filter));
             }
         }
-        List<Object> deduplicatedIngredientsForThisFilter = new ArrayList<>(allSubtypes);
-        deduplicatedIngredientsForThisFilter.add("I don't mind");
-        return List.copyOf(deduplicatedIngredientsForThisFilter);
+        List<Object> deduplicatedIngredients = new ArrayList<>(allSubtypes);
+
+        //sort alphabetically even though they're Object;
+        //https://medium.com/@AlexanderObregon/javas-comparator-comparing-method-explained-342361288af6
+        deduplicatedIngredients.sort(Comparator.comparing(Object::toString));
+        // Add NONE as the second last option to relevant Lists
+        if (filter.allowsNoneChoice()) deduplicatedIngredients.add(SpecialChoice.NONE);
+        //Populate 'I don't mind'-type options for the relevant filters.
+        if (filter.allowsDontMindChoice()) deduplicatedIngredients.add(filter.getDontMindValue());
+
+        return List.copyOf(deduplicatedIngredients);
     }
 
     public List<MenuItem> findMatch(DreamMenuItem dreamMenuItem){
