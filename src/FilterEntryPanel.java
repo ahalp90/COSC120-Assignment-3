@@ -98,6 +98,8 @@ public class FilterEntryPanel {
         JPanel saladFiltersPanel = makeSaladFiltersPanel();
         JPanel typeFilterPanel = makeTypeFilterPanel();
 
+
+
         typeSpecificFilterCardsPanel.add(burgerFiltersPanel, "burgerFilters");
         typeSpecificFilterCardsPanel.add(saladFiltersPanel, "saladFilters");
 
@@ -136,22 +138,28 @@ public class FilterEntryPanel {
      * @return JPanel for all shared filter selection
      */
     private JPanel makeSharedFiltersPanel() {
-        //                  *** CONTAINER FOR THE SHARED FILTER PANELS***
-        JPanel sharedFiltersPanel = new JPanel(new GridLayout(2,2));
-        // PICKLES AND TOMATO PANEL
+        JPanel sharedFiltersPanel = new JPanel(new BorderLayout());
+
+        //TOP AREA: pickles/tomatoes (left) and proteins (right)
+        JPanel topRow = new JPanel(new GridLayout(1,2));
         JPanel picklesAndTomatoPanel = makePicklesAndTomatoSelectorPanel();
-        // PROTEIN PROMPT AND SELECTOR
         JPanel proteinPromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.PROTEIN);
 
-        // MIN AND MAX PRICE PROMPT AND SELECTORS
-        JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
-        // CHEESE PROMPT AND SELECTOR
-        JPanel cheesePromptAndSelectorPanel = makeCheesePromptAndSelectorPanel();
+        topRow.add(picklesAndTomatoPanel);
+        topRow.add(proteinPromptAndSelectorPanel);
 
-        sharedFiltersPanel.add(picklesAndTomatoPanel);
-        sharedFiltersPanel.add(proteinPromptAndSelectorPanel);
-        sharedFiltersPanel.add(cheesePromptAndSelectorPanel);
-        sharedFiltersPanel.add(pricePromptAndSelectorPanel);
+        //BOTTOM AREA: cheese and price in a horizontal layout
+        JPanel bottomRow = new JPanel(new GridLayout(1,2));
+        JPanel cheesePromptAndSelectorPanel = makeCheesePromptAndSelectorPanel();
+        JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
+
+        bottomRow.add(cheesePromptAndSelectorPanel);
+        bottomRow.add(pricePromptAndSelectorPanel);
+
+        //COMPOSE THE FINAL PANEL
+        sharedFiltersPanel.add(topRow, BorderLayout.CENTER);
+        sharedFiltersPanel.add(bottomRow, BorderLayout.SOUTH);
+
 
         return sharedFiltersPanel;
     }
@@ -206,14 +214,8 @@ public class FilterEntryPanel {
         JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
         JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCE_S);
 
-        JPanel bunsAndSpacerPanel = new JPanel(new GridLayout(1,2));
-        JLabel bunSpacerLabel = new JLabel();
-        bunSpacerLabel.setOpaque(false);
-        bunSpacerLabel.add(bunPromptAndSelectorPanel);
-        bunsAndSpacerPanel.add(bunSpacerLabel);
-
-        burgerFiltersPanel.add(bunsAndSpacerPanel);
-        burgerFiltersPanel.add(saucePromptAndSelectorPanel);
+        burgerFiltersPanel.add(bunPromptAndSelectorPanel); //LEFT SIDE: buns
+        burgerFiltersPanel.add(saucePromptAndSelectorPanel); //RIGHT SIDE: sauces
 
         return  burgerFiltersPanel;
     }
@@ -315,8 +317,14 @@ public class FilterEntryPanel {
         // ***PICKLE SECTION***
         JPanel pickleSection = new JPanel(new BorderLayout());
         JLabel picklePromptLabel = new JLabel(Filter.PICKLES.filterPrompt());
+
+        JPanel checkboxWrapper = new JPanel();
+        checkboxWrapper.setLayout(new BoxLayout(checkboxWrapper, BoxLayout.Y_AXIS));
+        checkboxWrapper.add(this.pickleCheckBox);
+        checkboxWrapper.add(Box.createVerticalGlue());
+
         pickleSection.add(picklePromptLabel, BorderLayout.NORTH);
-        pickleSection.add(this.pickleCheckBox, BorderLayout.CENTER);
+        pickleSection.add(checkboxWrapper, BorderLayout.CENTER);
 
         picklesAndTomatoPanel.add(pickleSection, BorderLayout.CENTER);
         picklesAndTomatoPanel.add(tomatoSection, BorderLayout.SOUTH);
@@ -396,9 +404,15 @@ public class FilterEntryPanel {
         JPanel bunFiltersPanel = new JPanel(new BorderLayout());
         JLabel bunPromptLabel = new JLabel(Filter.BUN.filterPrompt());
 
+        JPanel growthRestrictingWrapper = new JPanel();
+        growthRestrictingWrapper.setLayout(new BoxLayout(growthRestrictingWrapper, BoxLayout.Y_AXIS));
+        growthRestrictingWrapper.add(Box.createVerticalGlue());
+        growthRestrictingWrapper.add(this.bunSelector);
+        growthRestrictingWrapper.add(Box.createVerticalGlue());
+
         //Compose the bun panel to return
-        bunFiltersPanel.add(bunPromptLabel,  BorderLayout.WEST);
-        bunFiltersPanel.add(this.bunSelector, BorderLayout.CENTER);
+        bunFiltersPanel.add(bunPromptLabel, BorderLayout.WEST);
+        bunFiltersPanel.add(growthRestrictingWrapper, BorderLayout.CENTER);
 
         return bunFiltersPanel;
     }
@@ -475,7 +489,7 @@ public class FilterEntryPanel {
      * Gets the populated corePanel to add to a external class' Frame
      * @return a JPanel populated to function as a filter entry panel, with relevant fields for interim selection storage.
      */
-    public JPanel getView(){
+    public JPanel getCorePanel(){
         return this.corePanel;
     }
 

@@ -37,6 +37,16 @@ public class MenuSearcher implements GuiListener {
 
         //Create the GUI and set up the listeners. invokeLater for EDT for Swing Components.
         SwingUtilities.invokeLater(() -> {
+            //Look and feel exception handling from https://docs.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html#available
+            try {
+                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            }
+            catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException |
+                   IllegalAccessException e) {
+                System.err.println("Nimbus look and feel could not be loaded."
+                        +"\nApplication will run with default Java Look and Feel.");
+            }
+
             OrderGui gui = new OrderGui(filterOptions);
 
             //Add needed listeners so the MenuSearcher can observe the GUI and vice-versa
@@ -262,6 +272,7 @@ public class MenuSearcher implements GuiListener {
             String[] info = fileContents.get(i).split("\\[");
             String[] singularInfo = info[0].split(",");
 
+            String cheeseRaw =  info[1].replace("]","");
             String leafyGreensRaw = info[2].replace("]","");
             String saucesRaw = info[3].replace("]","");
             String description = info[4].replace("]","");
@@ -357,6 +368,14 @@ public class MenuSearcher implements GuiListener {
         return menu;
     }
 
+    /**
+     * Return an immutable List of all MenuItems held in the MenuSearcher's Menu
+     * @return immutable List of MenuItem
+     */
+    public List<MenuItem> getAllMenuItems() {
+        return List.copyOf(this.menu.getMenuItems());
+    }
+
     //              ***LISTENER INTERFACE INTERACTION METHODS***
 
     public void addOrderingSystemListener(OrderingSystemListener listener) {
@@ -382,7 +401,7 @@ public class MenuSearcher implements GuiListener {
 
     private void notifyListenersOnNoMatchesFound(DreamMenuItem dreamMenuItem) {
         for (OrderingSystemListener listener : listeners) {
-            listener.onNoMatchesFound(dreamMenuItem);
+            listener.onNoMatchesFound(this.getAllMenuItems());
         }
     }
 

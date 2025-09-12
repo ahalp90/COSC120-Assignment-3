@@ -4,5 +4,5 @@ public interface OrderingSystemListener {
 
     void onSearchResults(List<MenuItem> matches);
 
-    void onNoMatchesFound(DreamMenuItem originalDreamFilters);
+    void onNoMatchesFound(List<MenuItem> fullMenu);
 }

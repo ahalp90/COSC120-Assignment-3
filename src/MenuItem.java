@@ -4,7 +4,7 @@ import java.text.DecimalFormat;
  * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
  */
 
-public class MenuItem {
+public final class MenuItem {
 
     //fields
     private final String menuItemIdentifier;
@@ -44,14 +44,18 @@ public class MenuItem {
         return price;
     }
     public DreamMenuItem getDreamMenuItem(){ return dreamMenuItem;}
+    public String getDreamMenuItemInfo() {return this.dreamMenuItem.getInfo();}
+    public boolean isMenuItemNotCustomItem() {return this.price != -1;}
 
     //menu info
     public String getMenuItemInformation(){
         DecimalFormat df = new DecimalFormat("0.00");
         String output = "\n*******************************************";
-        if(!getMenuItemIdentifier().equals("")) output+="\n"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription();
+        if(!getMenuItemIdentifier().equals("")) {
+            output+="\n\t"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription() + "\n";
+        }
         output+=getDreamMenuItem().getInfo();
         if(price==-1) return output;
-        else return output+"\nPrice: $"+df.format(this.getPrice());
+        else return output+"\n\nPrice: $"+df.format(this.getPrice());
     }
 }

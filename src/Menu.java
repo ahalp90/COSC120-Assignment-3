@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class Menu {
+public final class Menu {
     /**
      * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
      */
@@ -33,4 +33,5 @@ public class Menu {
         return matching;
     }
 
+    public Set<MenuItem> getMenuItems(){return Set.copyOf(menu);}
 }
