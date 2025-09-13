@@ -531,21 +531,19 @@ public class FilterEntryPanel {
         boolean hasExplicitNone = selected.contains(SpecialChoice.NONE);
         boolean hasDontMind = selected.contains(dontMindValue);
 
-        //Invokelater because gui behaviour is happening mixed with logical state change.
         if (hasExplicitNone && hasDontMind) {
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(
-                        corePanel,
-                        "Cannot select '" + SpecialChoice.NONE + "' and '" + dontMindValue + "' together."
-                                +"\nPlease choose one or the other.",
-                        "Invalid Selection",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                selector.clearSelection();
-            });
+            JOptionPane.showMessageDialog(
+                    corePanel,
+                    "Cannot select '" + SpecialChoice.NONE + "' and '" + dontMindValue + "' together."
+                            +"\nPlease choose one or the other.",
+                    "Invalid Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            selector.clearSelection();
         }
 
         if (((hasExplicitNone || hasDontMind)) && selected.size() > 1) {
+            //Invokelater because gui behaviour is queued while technically still selecting.
             SwingUtilities.invokeLater(() -> {
                 if (hasExplicitNone) selector.setSelectedValue(SpecialChoice.NONE, true);
                 else  selector.setSelectedValue(dontMindValue, true);
@@ -617,7 +615,7 @@ public class FilterEntryPanel {
         // If selectors were missing selections
         return "Please make a selection for: " + String.join(", ", missing) +
                 "\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
-                +"\nor '" +SpecialChoice.NONE + "'if you know you don't want this item in your food.";
+                +"\nor '" +SpecialChoice.NONE + "' if you know you don't want this item in your food.";
 
     }
 

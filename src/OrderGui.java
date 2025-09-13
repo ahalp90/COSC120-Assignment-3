@@ -1,9 +1,6 @@
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -147,9 +144,8 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
 
     /**
      * Creates the main filtering view; composes core FilterEntryPanel onto a Panel with a side banner and search button.
-     * <p>Uses JSplitPane to achieve layout split.
-     * <p>Ideas from: https://stackoverflow.com/questions/44027958/which-java-layout-is-suitable-for-my-layout
-     * and https://docs.oracle.com/javase/tutorial/uiswing/components/splitpane.html
+     * <p>Nested GridBagLayouts for split.
+     * <p>Side banner image responsively resizes (code attributions as for buttons and other responsive resizing images)
      * @return JPanel with the mainBurgerFilterPanel
      */
     private JPanel makeMainBurgerFilterPanel() {
@@ -185,37 +181,55 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         JButton searchButton = makeSearchButton();
         JPanel filterPanel = this.filterEntryPanel.getCorePanel(); //local variable name to make it neater below.
 
-        //Set minimum dimensions (token value) so that the layout manager properly respects the resize weights.
+        //Set minimum dimensions (token value) so that the layout manager properly respects the
+        //resize weights; otherwise the side banner gets squished into nothingness.
         sideBanner.setMinimumSize(new Dimension(1,1));
         filterPanel.setMinimumSize(new Dimension(1,1));
         searchButton.setMinimumSize(new Dimension(1,1));
 
 
-        //This is the right side, it's a vertical split between the filter panel and the search button
-        JSplitPane rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filterPanel, searchButton);
-        rightSplit.setResizeWeight(0.85);
-        rightSplit.setDividerSize(0);
-        rightSplit.setBorder(null);
-        rightSplit.setEnabled(false);
+        //LOCAL CONSTANTS FOR GRIDBAGLAYOUT WEIGHTS
+        double FILTER_PANEL_Y_WEIGHT = 0.85;
+        double SEARCH_BUTTON_Y_WEIGHT = 0.15;
+        double SIDE_BANNER_X_WEIGHT = 0.3;
+        double RIGHT_PANEL_X_WEIGHT = 0.7;
 
-        //Force the divider to be in the correct spot from startup
-        //The invokeLater feels like it shouldn't be necessary since this GUI is already on the EDT, but Swing is a pig.
-        SwingUtilities.invokeLater(() -> {rightSplit.setDividerLocation(0.85);});
+        //USE NESTED GRIDBAGLAYOUTS FOR WEIGHTED ROWS/COLUMNS
+        //RIGHT SIDE (VERTICALLY STACKED)
+        JPanel rightPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcRight = new GridBagConstraints();
+        gbcRight.fill = GridBagConstraints.BOTH;
+        gbcRight.gridx = 0;
+        gbcRight.weightx = 1.0;
 
+        //Filter Panel - top chunk
+        gbcRight.gridy = 0;
+        gbcRight.weighty =  FILTER_PANEL_Y_WEIGHT;
+        rightPanel.add(filterPanel, gbcRight);
 
-        //This is a horizontal split to put the banner on the left and the above components on the right.
-        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sideBanner, rightSplit);
-        mainSplit.setResizeWeight(0.3);
-        mainSplit.setDividerSize(0);
-        mainSplit.setBorder(null);
-        mainSplit.setEnabled(false);
+        //Search Button - bottom chunk
+        gbcRight.gridy = 1;
+        gbcRight.weighty = SEARCH_BUTTON_Y_WEIGHT;
+        rightPanel.add(searchButton, gbcRight);
 
-        SwingUtilities.invokeLater(() -> {mainSplit.setDividerLocation(0.3);});
+        //COMPOSED MAIN PANEL - horizontal split
+        JPanel mainBurgerFilterPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbcMain = new  GridBagConstraints();
+        gbcMain.fill = GridBagConstraints.BOTH;
+        gbcMain.gridy = 0;
+        gbcMain.weighty = 1.0;
 
-        //Finally put it all together and return the panel.
-        JPanel mainBurgerFilterPanel = new JPanel(new BorderLayout());
+        //Side banner - left chunk
+        gbcMain.gridx = 0;
+        gbcMain.weightx = SIDE_BANNER_X_WEIGHT;
+        mainBurgerFilterPanel.add(sideBanner, gbcMain);
+
+        //Right panel - right chunk (i.e. filters + search)
+        gbcMain.gridx = 1;
+        gbcMain.weightx = RIGHT_PANEL_X_WEIGHT;
+        mainBurgerFilterPanel.add(rightPanel, gbcMain);
+
         mainBurgerFilterPanel.setPreferredSize(GUI_PREFERRED_SIZE);
-        mainBurgerFilterPanel.add(mainSplit, BorderLayout.CENTER);
 
         return mainBurgerFilterPanel;
     }
@@ -439,6 +453,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
 
     @Override
     public void onBackButtonPressed() {
+        this.filterEntryPanel.clearSelections();
         switchCard("mainFilterPanel");
     }
 

@@ -71,14 +71,9 @@ public class MenuSearcher implements GuiListener {
     public Map<Filter, List<Object>> getFilterOptions(){
         Map<Filter, List<Object>> filterOptions = new HashMap<>();
 
-        filterOptions.put(Filter.DRESSING, List.copyOf(Arrays.asList(Dressing.values())));
-        filterOptions.put(Filter.PROTEIN, List.copyOf(Arrays.asList(Protein.values())));
-        filterOptions.put(Filter.SAUCE_S, List.copyOf(Arrays.asList(Sauce.values())));
-        filterOptions.put(Filter.TYPE, List.copyOf(Arrays.asList(Type.values())));
-        //Add options for filters who need their values read from menu because they can't be
-        //identified by their own Enums or by a Boolean/boolean
         for (Filter thisFilter : Filter.values()) {
-            if (thisFilter.needsMenuDataForSelectorOptions()){
+            //No point getting the Booleans, as they're expected to be represented by radio-buttons or checkboxes.
+            if (!thisFilter.valuesCanBeRepresentedByBooleanWrapper()){
                 //Already returns an immutable List--just put it in the Map.
                 filterOptions.put(thisFilter, this.menu.getAllIngredientTypes(thisFilter));
             }

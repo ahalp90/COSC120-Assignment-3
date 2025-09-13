@@ -1,9 +1,46 @@
+import java.util.List;
+
 public enum Filter {
     /**
-     * Created by Dr Andreas Shepley for COSC120 on 25/04/2025.
-     * Smart Enum methods added by Ariel Halperin.
+     * Original values by Dr Andreas Shepley for COSC120 on 25/04/2025.
+     * Smart Enum functionality added by Ariel Halperin.
      */
-    TYPE,BUN,PROTEIN,CHEESE,PICKLES,CUCUMBER,TOMATO,DRESSING,LEAFY_GREENS,SAUCE_S;
+    TYPE(Type.class),
+    BUN(null),
+    PROTEIN(Protein.class),
+    CHEESE(null),
+    PICKLES(null),
+    CUCUMBER(null),
+    TOMATO(null),
+    DRESSING(Dressing.class),
+    LEAFY_GREENS(null),
+    SAUCE_S(Sauce.class);
+
+    // This field holds the reference to the public enum relevant to this Filter
+    private final Class<? extends Enum<?>> relevantEnumClass;
+
+    /**
+     * A very smart Enum!
+     * Constructor to assign fields connecting the Filter values to any relevant external Enum classes
+     * Ideas from: https://stackoverflow.com/questions/69909969/java-enum-with-field-of-type-enum
+     * @param relevantEnumClass the public Enum class that has sub-values for the relevant Filter value.
+     */
+    Filter(Class<? extends Enum<?>> relevantEnumClass) {
+        this.relevantEnumClass = relevantEnumClass;
+    }
+
+    /**
+     * Gets the values of the public enum connected to this Filter value
+     * <p><b>Null must be guarded</b> by hasEnumRepresentingItsValues() call.
+     * @return <b>immutable List</b> of the values of the enum class relevant to this Filter,
+     * <b>or null</b> if none is attached
+     */
+    public List<Object> getEnumValues() {
+        if (relevantEnumClass == null) {
+            return null;
+        }
+        return List.of(relevantEnumClass.getEnumConstants());
+    }
 
     public String toString(){
         return switch (this) {
@@ -114,6 +151,17 @@ public enum Filter {
     }
 
     /**
+     * Identifies Filters whose I_DONT_MIND values are in the specific enum class relevant to that Filter value
+     * @return true if the Filter has its own externally defined I_DONT_MIND value
+     */
+    public boolean hasDontMindValueDefinedInOwnEnum() {
+        return switch (this) {
+            case DRESSING, PROTEIN, SAUCE_S -> true;
+            default -> false;
+        };
+    }
+
+    /**
      * Attempt to optimise search by ordering by most restrictive binary filters first
      * @return int of the item's search order.
      */
@@ -134,16 +182,36 @@ public enum Filter {
     }
 
     /**
-     * Identifies Filters that do not have dedicated Enums of their possible values and cannot
-     * be represented by a simple true/false/null distinction.
-     * @return true if menu data is needed for filter, false otherwise.
+     * Identifies Filters that have a dedicated Enum of their possible values
+     * @return true if an Enum class exists representing its values, false if not
      */
-    public boolean needsMenuDataForSelectorOptions() {
-        return switch (this){
-            case BUN, CHEESE, LEAFY_GREENS -> true;
+    public boolean hasEnumRepresentingItsValues() {
+        return relevantEnumClass != null;
+    }
+
+    /**
+     * Identifies Filters whose possible values can be identified by a boolean/Boolean.
+     * <p>I.e. their only possible logical states are true, false or null
+     * @return true if a Boolean could represent its values.
+     */
+    public boolean valuesCanBeRepresentedByBooleanWrapper() {
+        return switch (this) {
+            case TOMATO, CUCUMBER, PICKLES -> true;
             default -> false;
         };
     }
+
+//    /**
+//     * Identifies Filters that do not have dedicated Enums of their possible values and cannot
+//     * be represented by a simple true/false/null distinction.
+//     * @return true if menu data is needed for filter, false otherwise.
+//     */
+//    public boolean needsMenuDataForSelectorOptions() {
+//        return switch (this){
+//            case BUN, CHEESE, LEAFY_GREENS -> true;
+//            default -> false;
+//        };
+//    }
 
     /**
      * Identifies Filters that are relevant to Burger selection

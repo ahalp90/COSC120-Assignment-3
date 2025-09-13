@@ -37,7 +37,7 @@ public class MenuItemPanel {
                         "images/" + this.menuItem.getMenuItemIdentifier() + ".png"
                         );
         Image scaledImg = originalImg.getScaledInstance(
-                IMG_THUMBNAIL_DIMENSION.width, IMG_THUMBNAIL_DIMENSION.height, Image.SCALE_SMOOTH);
+                IMG_THUMBNAIL_DIMENSION.width, IMG_THUMBNAIL_DIMENSION.height, Image.SCALE_FAST);
         imageLabel.setIcon(new ImageIcon(scaledImg));
 
         //The text area for information
