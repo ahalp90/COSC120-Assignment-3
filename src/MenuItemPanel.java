@@ -10,6 +10,7 @@ public class MenuItemPanel {
     private final DecimalFormat df;
 
     private static final Dimension IMG_THUMBNAIL_DIMENSION = new Dimension(100,100);
+    private static final int CORE_PANEL_HEIGHT = 300;
 
     public MenuItemPanel(MenuItem menuItem, DecimalFormat df) {
         this.menuItem = menuItem;
@@ -24,7 +25,7 @@ public class MenuItemPanel {
 
         //Panel should stretch to fit its container in width, but height should just be its internal
         //image + a bit of padding. Set here so it doesn't flood the viewport.
-        this.corePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, (int) (IMG_THUMBNAIL_DIMENSION.height * 2.5)));
+        this.corePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, CORE_PANEL_HEIGHT));
 
         //SUB-COMPONENTS
         this.checkBox = new JCheckBox();
@@ -109,12 +110,12 @@ public class MenuItemPanel {
         String dreamInfoHtml = this.menuItem.getDreamMenuItemInfo().replace("\n", "<br>");
         sb.append(dreamInfoHtml);
 
-        //Chuck the price in if it's not a custom item--i.e. normal menu item
-        if (this.menuItem.isMenuItemNotCustomItem()) {
-            sb.append("<br><br><b>Price: $")
-                    .append(this.df.format(this.menuItem.getPrice()))
-                    .append("</b>");
-        }
+//        //Chuck the price in if it's not a custom item--i.e. normal menu item
+//        if (this.menuItem.isMenuItemNotCustomItem()) {
+//            sb.append("<br><br><b>Price: $")
+//                    .append(this.df.format(this.menuItem.getPrice()))
+//                    .append("</b>");
+//        }
 
         sb.append("</html>");
 

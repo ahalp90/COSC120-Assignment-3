@@ -44,12 +44,12 @@ public enum Filter {
 
     public String toString(){
         return switch (this) {
-            case TYPE -> "Menu item type";
-            case BUN -> "Bun/bread";
+            case TYPE -> "Type";
+            case BUN -> "Bun";
             case PROTEIN -> "Protein";
             case CHEESE -> "Cheese";
-            case PICKLES -> "Pickles (gherkins)";
-            case CUCUMBER -> "Cucumber (continental)";
+            case PICKLES -> "Pickles";
+            case CUCUMBER -> "Cucumber";
             case TOMATO -> "Tomato";
             case DRESSING -> "Salad dressing";
             case LEAFY_GREENS -> "Leafy greens";
@@ -71,7 +71,7 @@ public enum Filter {
             case PICKLES -> "<html><b>Pickles?</b></html>";
             case CUCUMBER -> "<html><b>Cucumber?</b></html>";
             case TOMATO -> "<html><b>Tomato?</b></html>";
-            case DRESSING -> "<html><b>Dressing?</b></html>";
+            case DRESSING -> "<html><b>Salad dressing?</b></html>";
             case LEAFY_GREENS -> "<html><b>Leafy greens?</b> <i>(hold ctrl to select >1)</i></html>";
             case SAUCE_S -> "<html><b>Sauces?</b> <i>(hold ctrl to select >1)</i></html>";
         };

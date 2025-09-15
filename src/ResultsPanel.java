@@ -96,6 +96,7 @@ public class ResultsPanel {
 
     /**
      * Set the listener that will handle this Panel's events
+     * <p>This panel uses a single listener because it's designed to send events directly back to its parent container
      * @param listener ResultsPanelListener interface, though ultimately it's the OrderGui listening.
      */
     public void setResultsPanelListener(ResultsPanelListener listener) {

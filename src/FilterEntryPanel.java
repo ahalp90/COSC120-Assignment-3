@@ -32,6 +32,8 @@ public class FilterEntryPanel {
     // THE CORE COMPOSED JPANEL THAT WILL HOLD ALL THE SUB-COMPONENTS
     private final JPanel corePanel;
 
+    private static final int MAIN_SPLIT_HORIZONTAL_PADDING = 20;
+
     public FilterEntryPanel(Map<Filter, List<Object>> filterOptions) {
 
         //INITIALISE ALL FIELD ITEMS
@@ -117,10 +119,13 @@ public class FilterEntryPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.BOTH; //global values
 
+        gbc.insets = new Insets(0,0,5,0); //5px gap below Type selector
         gbc.gridy = 0; gbc.weighty = 0.1; this.corePanel.add(typeFilterPanel, gbc); //give it a sliver up top
 
+        gbc.insets = new Insets(5,0,5,0); //5px gap above and below shared filters
         gbc.gridy = 2; gbc.weighty = 0.35; this.corePanel.add(typeSpecificFilterCardsPanel, gbc); //gets a good chunk
 
+        gbc.insets = new Insets(5,0,0,0);
         gbc.gridy = 1; gbc.weighty = 0.55; this.corePanel.add(sharedFiltersPanel, gbc); //gets most space
     }
 
@@ -151,20 +156,31 @@ public class FilterEntryPanel {
         JPanel sharedFiltersPanel = new JPanel(new BorderLayout());
 
         //TOP AREA: pickles/tomatoes (left) and proteins (right)
-        JPanel topRow = new JPanel(new GridLayout(1,2));
+        JPanel topRow = new JPanel(new GridLayout(1,2,MAIN_SPLIT_HORIZONTAL_PADDING, 0));
         JPanel picklesAndTomatoPanel = makePicklesAndTomatoSelectorPanel();
         JPanel proteinPromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.PROTEIN);
+//
+//        picklesAndTomatoPanel.setBorder(BorderFactory.createEmptyBorder(0,10,0,5));
+//        proteinPromptAndSelectorPanel.setBorder(BorderFactory.createEmptyBorder(0,5,0,10));
 
         topRow.add(picklesAndTomatoPanel);
         topRow.add(proteinPromptAndSelectorPanel);
 
         //BOTTOM AREA: cheese and price in a horizontal layout
-        JPanel bottomRow = new JPanel(new GridLayout(1,2));
+        JPanel bottomRow = new JPanel(new GridLayout(1, 2, MAIN_SPLIT_HORIZONTAL_PADDING, 0)); //20px horizontal gap between cheese and prices
         JPanel cheesePromptAndSelectorPanel = makeCheesePromptAndSelectorPanel();
         JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
 
         bottomRow.add(cheesePromptAndSelectorPanel);
         bottomRow.add(pricePromptAndSelectorPanel);
+
+        bottomRow.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(10,0,0,0),
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(1,0,0,0, Color.LIGHT_GRAY),
+                        BorderFactory.createEmptyBorder(10,0,0,0)
+                )
+        ));
 
         //COMPOSE THE FINAL PANEL
         sharedFiltersPanel.add(topRow, BorderLayout.CENTER);
@@ -185,7 +201,7 @@ public class FilterEntryPanel {
      * @return JPanel with all salad-only filters
      */
     private JPanel makeSaladFiltersPanel() {
-        JPanel saladFiltersPanel = new JPanel(new GridLayout(1,2));
+        JPanel saladFiltersPanel = new JPanel(new GridLayout(1,2, MAIN_SPLIT_HORIZONTAL_PADDING, 0));
 
         //CREATE THE 3 CORE COMPONENTS
         JPanel leafyGreensSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.LEAFY_GREENS);
@@ -219,7 +235,7 @@ public class FilterEntryPanel {
      * @return JPanel for all burger-only filter selection
      */
     private JPanel makeBurgerFiltersPanel() {
-        JPanel burgerFiltersPanel = new JPanel(new GridLayout(1,2));
+        JPanel burgerFiltersPanel = new JPanel(new GridLayout(1,2, MAIN_SPLIT_HORIZONTAL_PADDING, 0));
 
         JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
         JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCE_S);
@@ -274,8 +290,11 @@ public class FilterEntryPanel {
         JPanel priceSelectorPanel = new JPanel();
         priceSelectorPanel.setLayout(new BoxLayout(priceSelectorPanel, BoxLayout.X_AXIS));
 
-        JLabel priceMinLabel = new JLabel("<html><b>Min. price: $</b></html>");
-        JLabel priceMaxLabel = new JLabel("<html><b>Max. price: $</b></html>");
+
+        //Use <nobr> to stop line breaking depending on layout changes
+        //https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/nobr
+        JLabel priceMinLabel = new JLabel("<html><b>Min. <nobr>price: $</nobr></b></html>");
+        JLabel priceMaxLabel = new JLabel("<html><b>Max. <nobr>price: $</nobr></b></html>");
 
         priceSelectorPanel.add(priceMinLabel);
         priceSelectorPanel.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -284,8 +303,6 @@ public class FilterEntryPanel {
         priceSelectorPanel.add(priceMaxLabel);
         priceSelectorPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         priceSelectorPanel.add(this.priceMaxField);
-
-        priceSelectorPanel.setBorder(BorderFactory.createEmptyBorder(0,10,0,10)); //Bit of horizontal breathing room
 
         return priceSelectorPanel;
 
@@ -305,24 +322,27 @@ public class FilterEntryPanel {
 
         //TOMATOES PROMPT AND BUTTONS
         JLabel tomatoPromptLabel = new JLabel(Filter.TOMATO.filterPrompt());
-        JRadioButton tomatoButton1 = new JRadioButton(YesNoSkipValidButtonStrings.YES.toString());
-        JRadioButton tomatoButton2 = new JRadioButton(YesNoSkipValidButtonStrings.NO.toString());
-        JRadioButton tomatoButton3 = new JRadioButton(YesNoSkipValidButtonStrings.I_DONT_MIND.toString());
+        JRadioButton tomatoButton1 = new JRadioButton("Yes");
+        JRadioButton tomatoButton2 = new JRadioButton("No");
+        JRadioButton tomatoButton3 = new JRadioButton(Filter.TOMATO.getDontMindValue().toString());
         //Register with the tomato ButtonGroup; NB THIS IS THE FIELD TOMATOGROUP
         this.tomatoGroup.add(tomatoButton1);
         this.tomatoGroup.add(tomatoButton2);
         this.tomatoGroup.add(tomatoButton3);
 
-        //ORGANISE THE TOMATO BUTTONS IN A VERTICAL GRID
-        JPanel tomatoButtonsPanel = new JPanel(new GridLayout(3, 1));
-        tomatoButtonsPanel.add(tomatoButton1);
-        tomatoButtonsPanel.add(tomatoButton2);
-        tomatoButtonsPanel.add(tomatoButton3);
+        //PUT THE TOMATO PROMPT AND BUTTONS IN A CONTAINER TOGETHER in a vertical grid
+        JPanel tomatoSection = new JPanel(new GridLayout(4,1));
+        tomatoSection.add(tomatoPromptLabel);
+        tomatoSection.add(tomatoButton1);
+        tomatoSection.add(tomatoButton2);
+        tomatoSection.add(tomatoButton3);
 
-        //PUT THE TOMATO PROMPT AND BUTTONS IN A CONTAINER TOGETHER
-        JPanel tomatoSection = new JPanel(new BorderLayout());
-        tomatoSection.add(tomatoPromptLabel, BorderLayout.NORTH);
-        tomatoSection.add(tomatoButtonsPanel, BorderLayout.CENTER);
+        //Give the tomato buttons a panel in which they will always occupy the vertical centre
+        JPanel centredTomatoWrapper = new JPanel();
+        centredTomatoWrapper.setLayout(new BoxLayout(centredTomatoWrapper, BoxLayout.Y_AXIS));
+        centredTomatoWrapper.add(Box.createVerticalGlue());
+        centredTomatoWrapper.add(tomatoSection);
+        centredTomatoWrapper.add(Box.createVerticalGlue());
 
         // ***PICKLE SECTION***
         JPanel pickleSection = new JPanel(new BorderLayout());
@@ -336,8 +356,10 @@ public class FilterEntryPanel {
         pickleSection.add(picklePromptLabel, BorderLayout.NORTH);
         pickleSection.add(checkboxWrapper, BorderLayout.CENTER);
 
-        picklesAndTomatoPanel.add(pickleSection, BorderLayout.CENTER);
-        picklesAndTomatoPanel.add(tomatoSection, BorderLayout.SOUTH);
+
+
+        picklesAndTomatoPanel.add(pickleSection, BorderLayout.NORTH);
+        picklesAndTomatoPanel.add(centredTomatoWrapper, BorderLayout.CENTER);
 
         return  picklesAndTomatoPanel;
     }
@@ -351,27 +373,30 @@ public class FilterEntryPanel {
      * @return JPanel with JLabel and nested JPanel for radio buttons
      */
     private JPanel makeCucumberPromptAndSelectorPanel(){
-        JRadioButton cucumberButton1 = new JRadioButton(YesNoSkipValidButtonStrings.YES.toString());
-        JRadioButton cucumberButton2 = new JRadioButton(YesNoSkipValidButtonStrings.NO.toString());
-        JRadioButton cucumberButton3 = new JRadioButton(YesNoSkipValidButtonStrings.I_DONT_MIND.toString());
+        JRadioButton cucumberButton1 = new JRadioButton("Yes");
+        JRadioButton cucumberButton2 = new JRadioButton("No");
+        JRadioButton cucumberButton3 = new JRadioButton(Filter.CUCUMBER.getDontMindValue().toString());
         //Register with the cucumber ButtonGroup; NB THIS IS THE FIELD CUCUMBERGROUP
         this.cucumberGroup.add(cucumberButton1);
         this.cucumberGroup.add(cucumberButton2);
         this.cucumberGroup.add(cucumberButton3);
+
         //Create holding Panel and add to it
-        JPanel cucumberButtonsPanel = new JPanel(new GridLayout(3, 1));
-        cucumberButtonsPanel.add(cucumberButton1);
-        cucumberButtonsPanel.add(cucumberButton2);
-        cucumberButtonsPanel.add(cucumberButton3);
-
+        JPanel cucumberPanel = new JPanel(new GridLayout(4, 1));
         JLabel cucumberPromptLabel = new JLabel(Filter.CUCUMBER.filterPrompt());
+        cucumberPanel.add(cucumberPromptLabel);
+        cucumberPanel.add(cucumberButton1);
+        cucumberPanel.add(cucumberButton2);
+        cucumberPanel.add(cucumberButton3);
 
-        // Compose the panel to return
-        JPanel cucumberPromptAndSelectorPanel = new JPanel(new BorderLayout());
-        cucumberPromptAndSelectorPanel.add(cucumberPromptLabel, BorderLayout.NORTH);
-        cucumberPromptAndSelectorPanel.add(cucumberButtonsPanel, BorderLayout.CENTER);
+        //Wrapper panel to ensure the cucumber panel sits vertically centred within any parent using a borderlayout.
+        JPanel cucumberCentredWrapper = new JPanel();
+        cucumberCentredWrapper.setLayout(new BoxLayout(cucumberCentredWrapper, BoxLayout.Y_AXIS));
+        cucumberCentredWrapper.add(Box.createVerticalGlue());
+        cucumberCentredWrapper.add(cucumberPanel);
+        cucumberCentredWrapper.add(Box.createVerticalGlue());
 
-        return cucumberPromptAndSelectorPanel;
+        return cucumberCentredWrapper;
     }
 
     /**
@@ -407,24 +432,26 @@ public class FilterEntryPanel {
 
     /**
      * Factory helper to make a bun prompt and selector child panel for the filter panel.
-     * @return JPanel with a bunPromptLabel (BorderLayout.WEST) and a
-     * bunFiltersPanel(BorderLayout.CENTER) for selecting buns as Object from a JComboBox
+     * @return JPanel with a bunPromptLabel and the bunSelector combobox left aligned (x-axis) and centre-aligned (y-axis)
      */
     private JPanel makeBunPromptAndSelectorPanel(){
-        JPanel bunFiltersPanel = new JPanel(new BorderLayout());
+        JPanel bunPanel = new JPanel();
+        bunPanel.setLayout(new BoxLayout(bunPanel, BoxLayout.Y_AXIS));
+
         JLabel bunPromptLabel = new JLabel(Filter.BUN.filterPrompt());
+        bunPromptLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel growthRestrictingWrapper = new JPanel();
-        growthRestrictingWrapper.setLayout(new BoxLayout(growthRestrictingWrapper, BoxLayout.Y_AXIS));
-        growthRestrictingWrapper.add(Box.createVerticalGlue());
-        growthRestrictingWrapper.add(this.bunSelector);
-        growthRestrictingWrapper.add(Box.createVerticalGlue());
+        //Cajole the combobox to just take up a single line like the other comboboxes despite the space it has to grow.
+        this.bunSelector.setMaximumSize(new Dimension(Integer.MAX_VALUE, this.bunSelector.getPreferredSize().height));
+        this.bunSelector.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        //Compose the bun panel to return
-        bunFiltersPanel.add(bunPromptLabel, BorderLayout.WEST);
-        bunFiltersPanel.add(growthRestrictingWrapper, BorderLayout.CENTER);
+        bunPanel.add(Box.createVerticalGlue());
+        bunPanel.add(bunPromptLabel);
+        bunPanel.add(Box.createRigidArea(new Dimension(0,5))); //breathing space between prompt label and combobox
+        bunPanel.add(this.bunSelector);
+        bunPanel.add(Box.createVerticalGlue());
 
-        return bunFiltersPanel;
+        return bunPanel;
     }
 
     //GENERAL USE PRIVATE HELPERS
@@ -468,27 +495,23 @@ public class FilterEntryPanel {
 
 
     /**
-     * Validates the relevant ButtonGroup selection--whether 'Yes', 'No' or 'Skip' (or skip equivalent)
+     * Validates the relevant ButtonGroup selection--whether 'Yes', 'No' or 'I don't mind' (or equivalent)
      * @param buttonGroup the ButtonGroup to query
-     * @return true for 'Yes' selection, false for 'No' selection, and null for 'Skip' or equivalent selection.
+     * @return true for 'Yes' selection, false for 'No' selection, and null for 'I don't mind' or equivalent selection.
      * @throws IllegalStateException throws exception if the ButtonGroup does not contain 'Yes' or 'No' options.
      */
-    private Boolean getYesNoSkipButtonGroupSelection(ButtonGroup buttonGroup) throws IllegalStateException {
+    private Boolean getBooleanSelectionFromGroup(ButtonGroup buttonGroup, String dontMindText) throws IllegalStateException {
         String selection = getSelectedButtonText(buttonGroup);
 
         //valid 'Skip' choice by not selecting or selecting 'I Don't Mind'
-        if  (selection == null || selection.equals(YesNoSkipValidButtonStrings.I_DONT_MIND.toString())) {
+        if  (selection == null || selection.equals(dontMindText)) {
             return null;
-        } else if (selection.equals(YesNoSkipValidButtonStrings.YES.toString())) {
+        } else if (selection.equalsIgnoreCase("Yes")) {
             return true;
-        } else if (selection.equals(YesNoSkipValidButtonStrings.NO.toString())) {
+        } else if (selection.equalsIgnoreCase("No")) {
             return false;
         } else {
-            StringJoiner sj = new StringJoiner(", ");
-            for (YesNoSkipValidButtonStrings enumValue : YesNoSkipValidButtonStrings.values()) {sj.add(enumValue.toString());}
-
-            throw new IllegalStateException("Invalid ButtonGroup passed to getYesNoSkipButtonGroupSelection."
-                    +"Expected buttons with text "+ sj + "but there was a button called '" + selection + "'");
+            throw new IllegalStateException("Invalid button text found in ButtonGroup: '" + selection + "'");
         }
     }
 
@@ -562,6 +585,12 @@ public class FilterEntryPanel {
         return this.corePanel;
     }
 
+    /**
+     * Creates a new FilterSelections record based on the relevant field values.
+     * <p>This will thrown an NPE if Filter class stops providing I_DONT_MIND values for TOMATO and CUCUMBER.
+     * However, this should not happen as the program is currently organised.
+     * @return new FilterSelections record.
+     */
     public FilterSelections getFilterSelections(){
         return new FilterSelections(
                 (Type) itemTypeSelector.getSelectedItem(), //Type is always concrete, so might as well recast directly.
@@ -570,8 +599,8 @@ public class FilterEntryPanel {
                 dressingSelector.getSelectedItem(),
                 Set.copyOf(leafyGreensList.getSelectedValuesList()),
                 Set.copyOf(proteinList.getSelectedValuesList()),
-                getYesNoSkipButtonGroupSelection(tomatoGroup),
-                getYesNoSkipButtonGroupSelection(cucumberGroup),
+                getBooleanSelectionFromGroup(tomatoGroup, Filter.TOMATO.getDontMindValue().toString()),
+                getBooleanSelectionFromGroup(cucumberGroup, Filter.CUCUMBER.getDontMindValue().toString()),
                 pickleCheckBox.isSelected(),
                 cheeseSelector.getSelectedItem(),
                 priceMinField.getText(),
@@ -592,29 +621,29 @@ public class FilterEntryPanel {
         //Get the Type selected first for branching panel display/check logic
         Type selectedType =  (Type) itemTypeSelector.getSelectedItem();
 
-        if (selectedType == null) missing.add("Type");
+        if (selectedType == null) missing.add(Filter.TYPE.toString());
 
         //GENERAL FILTERS
-        if (proteinList.getSelectedValuesList().isEmpty()) missing.add("Protein");
-        if (getSelectedButtonText(tomatoGroup) == null) missing.add("Tomato");
-        if (cheeseSelector.getSelectedItem() == null) missing.add("Cheese");
-        //pickleCheckBox is always checked or unchecked (boolean)
+        if (proteinList.getSelectedValuesList().isEmpty()) missing.add(Filter.PROTEIN.toString());
+        if (getSelectedButtonText(tomatoGroup) == null) missing.add(Filter.TOMATO.toString());
+        if (cheeseSelector.getSelectedItem() == null) missing.add(Filter.CHEESE.toString());
+        //pickleCheckBox is always checked or unchecked (boolean)--no logical error state
 
         //TYPE-SPECIFIC FILTERS
         if (selectedType == Type.BURGER) {
-            if (sauceList.getSelectedValuesList().isEmpty()) missing.add("Sauce");
-            if (bunSelector.getSelectedItem() == null) missing.add("Bun");
+            if (sauceList.getSelectedValuesList().isEmpty()) missing.add(Filter.SAUCE_S.toString());
+            if (bunSelector.getSelectedItem() == null) missing.add(Filter.BUN.toString());
         } else if (selectedType == Type.SALAD) {
-            if (leafyGreensList.getSelectedValuesList().isEmpty()) missing.add("Leafy Greens");
-            if (getSelectedButtonText(cucumberGroup) == null) missing.add("Cucumber");
-            if (dressingSelector.getSelectedItem() == null) missing.add("Dressing");
+            if (leafyGreensList.getSelectedValuesList().isEmpty()) missing.add(Filter.LEAFY_GREENS.toString());
+            if (getSelectedButtonText(cucumberGroup) == null) missing.add(Filter.CUCUMBER.toString());
+            if (dressingSelector.getSelectedItem() == null) missing.add(Filter.DRESSING.toString());
         }
 
         if (missing.isEmpty()) return ""; //Return empty String if all relevant selectors had selections.
 
         // If selectors were missing selections
         return "Please make a selection for: " + String.join(", ", missing) +
-                "\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
+                "\n\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
                 +"\nor '" +SpecialChoice.NONE + "' if you know you don't want this item in your food.";
 
     }

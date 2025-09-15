@@ -9,26 +9,29 @@ public class DreamMenuItem {
     private final double maxPrice;
 
     public DreamMenuItem(Map<Filter, Object> filterMap, double minPrice, double maxPrice) {
-        this.filterMap=new LinkedHashMap<>(filterMap);
+        this.filterMap=new HashMap<>(filterMap);
         this.minPrice=minPrice;
         this.maxPrice=maxPrice;
     }
     public DreamMenuItem(Map<Filter, Object> filterMap) {
-        this.filterMap=new LinkedHashMap<>(filterMap);
+        this.filterMap=new HashMap<>(filterMap);
         this.minPrice=-1;
         this.maxPrice=-1;
     }
 
     public Map<Filter, Object> getAllFilters() {
-        return new LinkedHashMap<>(filterMap);
+        return new HashMap<>(filterMap);
     }
-    public Object getFilter(Filter key){return getAllFilters().get(key);}
-    public double getMinPrice() {
-        return minPrice;
+
+    public Object getFilter(Filter key){return this.filterMap.get(key);}
+
+    public Object getDreamItemType() {
+        return this.filterMap.getOrDefault(Filter.TYPE, null);
     }
-    public double getMaxPrice() {
-        return maxPrice;
-    }
+
+    public double getMinPrice() {return minPrice;}
+
+    public double getMaxPrice() {return maxPrice;}
 
     public String getInfo(){
         StringBuilder description = new StringBuilder();
@@ -99,6 +102,11 @@ public class DreamMenuItem {
             }
 
             //                      ***REGULAR FILTER CHECKS***
+
+            //User wants a value but the menu item doesn't have that attribute at all. Outside of a
+            //desired special choice of NONE, this will cause a NullPointerException if not handled.
+            if (menuItemValue ==null) return false;
+
             // If both values are collections, discard if the menu item doesn't have >=1 of the criteria.
             if (menuItemValue instanceof Collection<?> menuCollection
                     && criteriaValue instanceof Collection<?> criteriaCollection) {

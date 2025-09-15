@@ -4,7 +4,12 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
-public class OrderGui implements OrderingSystemListener, ResultsPanelListener, PersonalDetailsListener {
+/**
+ * The centralised GUI controller class. Coordinates views, as well as interface between view input panels and back-end MenuSearcher.
+ *
+ * Images created by ChatGPT5.
+ */
+public class OrderGui implements OrderingSystemListener, ResultsPanelListener, OrderCreationPanelListener {
     private final JFrame frame;
     private final CardLayout topCardLayout = new CardLayout();
     private final JPanel topCardPanel = new JPanel(topCardLayout);
@@ -12,22 +17,33 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
     // The core Panel where filter selects are actually situated and operated.
     private final FilterEntryPanel filterEntryPanel;
     private final ResultsPanel resultsPanel;
-    private final PersonalDetailsPanel detailsPanel;
-
-
+    private final OrderCreationPanel orderCreationPanel;
 
     // Store subscribers to the GuiListener. Currently only intended to be MenuSearcher--so
     // Collection not strictly needed, but it's reasonable this could expand in the future.
     private final List<GuiListener> listeners = new ArrayList<>();
 
+    //Store the cheese selected at search to pass to the OrderCreationPanel (and ultimately MenuSearcher).
+    //This could be made more abstract by storing the full FilterSelections record, but then it's
+    //storing currently superfluous information and requires more explicit unpacking logic on the
+    //other end.
+    //This is the only clean way to pass this information, as the relevant panels are all
+    //instantiated by the OrderGui constructor for reusability.
+    //Pre-cast to String to reduce exposure by non-final field.
+    private String lastSearchedCheese;
+
     //***CONSTANTS***
-    private static final Dimension GUI_PREFERRED_SIZE = new Dimension(800, 450);
+    private static final Dimension GUI_PREFERRED_SIZE = new Dimension(1024, 576);
     private static final String SEARCH_BUTTON_IMG_PATH = "images/search-now.png";
     private static final String WELCOME_BACKGROUND_IMG_PATH = "images/welcome-background.png";
     private static final String SIDE_BANNER_IMG_PATH = "images/side_banner.png";
 
     private static final BufferedImage FRAME_ICON_IMAGE =
             ImgAndButtonUtilities.loadBufferedImage("images/overloaded_burgers_graphic_small.png");
+    private static final ImageIcon SUCCESS_ICON = new ImageIcon(
+            ImgAndButtonUtilities.loadBufferedImage("images/success_icon.png"));
+    private static final ImageIcon FAIL_ICON = new ImageIcon(
+            ImgAndButtonUtilities.loadBufferedImage("images/fail_icon.png"));
 
 
     public OrderGui(Map<Filter, List<Object>> filterOptions) {
@@ -37,8 +53,8 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         this.resultsPanel = new ResultsPanel();
         this.resultsPanel.setResultsPanelListener(this); //register as listener
 
-        this.detailsPanel = new PersonalDetailsPanel();
-        this.detailsPanel.setPersonalDetailsListener(this); //register as listener
+        this.orderCreationPanel = new OrderCreationPanel();
+        this.orderCreationPanel.setPersonalDetailsListener(this); //register as listener
 
         //SETUP MAIN FRAME
         frame = new JFrame("Overloaded Burgers");
@@ -47,13 +63,13 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         frame.setPreferredSize(GUI_PREFERRED_SIZE);
         frame.setLayout(new BorderLayout()); //allow responsive resize.
         frame.setResizable(true);
-        frame.setLocationRelativeTo(null); //centre on screen
 
         //FINISH PUTTING TOGETHER THE MAIN VIEW
         composeTopCardPanel();
         frame.add(topCardPanel, BorderLayout.CENTER);
 
         frame.pack();
+        frame.setLocationRelativeTo(null); //centre on screen; must be after pack but before set visible
         frame.setVisible(true);
     }
 
@@ -61,7 +77,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         topCardPanel.add(makeWelcomeCardPanel(), "welcomePanel");
         topCardPanel.add(makeMainBurgerFilterPanel(), "mainFilterPanel");
         topCardPanel.add(resultsPanel.getCorePanel(), "resultsPanel");
-        topCardPanel.add(detailsPanel.getCorePanel(), "detailsPanel");
+        topCardPanel.add(orderCreationPanel.getCorePanel(), "orderCreationPanel");
     }
 
     private JPanel makeWelcomeCardPanel() {
@@ -98,7 +114,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         welcomePanel.setPreferredSize(GUI_PREFERRED_SIZE);//Preload with logical preferred size
 
         //CREATE THE 'Order Now' BUTTON AND ADD ACTION LISTENER
-        JButton orderNow = makeImgOnlyButtonWithResize(
+        JButton orderNow = ImgAndButtonUtilities.makeImgOnlyButtonWithResize(
                 "images/order-now-button.png",
                 new Dimension((int)(GUI_PREFERRED_SIZE.width / WELCOME_CARD_COLS),
                         (int)(GUI_PREFERRED_SIZE.height / WELCOME_CARD_ROWS))
@@ -181,18 +197,24 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         JButton searchButton = makeSearchButton();
         JPanel filterPanel = this.filterEntryPanel.getCorePanel(); //local variable name to make it neater below.
 
-        //Set minimum dimensions (token value) so that the layout manager properly respects the
-        //resize weights; otherwise the side banner gets squished into nothingness.
-        sideBanner.setMinimumSize(new Dimension(1,1));
-        filterPanel.setMinimumSize(new Dimension(1,1));
-        searchButton.setMinimumSize(new Dimension(1,1));
-
-
-        //LOCAL CONSTANTS FOR GRIDBAGLAYOUT WEIGHTS
+        //LOCAL CONSTANTS FOR LAYOUT WEIGHTING
         double FILTER_PANEL_Y_WEIGHT = 0.85;
         double SEARCH_BUTTON_Y_WEIGHT = 0.15;
         double SIDE_BANNER_X_WEIGHT = 0.3;
         double RIGHT_PANEL_X_WEIGHT = 0.7;
+
+        //SET MINIMUM DIMENSIONS - token values so that layout manager respects the resize weights.
+        //Otherwise sideBanner gets squished.
+        int minSideBannerWidth = (int)(GUI_PREFERRED_SIZE.width * SIDE_BANNER_X_WEIGHT * 0.5);
+        int minRightPanelWidth = (int)(GUI_PREFERRED_SIZE.width * RIGHT_PANEL_X_WEIGHT * 0.5);
+
+        sideBanner.setMinimumSize(new Dimension(minSideBannerWidth, 1));
+        sideBanner.setPreferredSize(new Dimension(
+                (int)(GUI_PREFERRED_SIZE.width * SIDE_BANNER_X_WEIGHT),
+                GUI_PREFERRED_SIZE.height
+        ));
+        filterPanel.setMinimumSize(new Dimension(minRightPanelWidth, 1));
+        searchButton.setMinimumSize(new Dimension(1,1));
 
         //USE NESTED GRIDBAGLAYOUTS FOR WEIGHTED ROWS/COLUMNS
         //RIGHT SIDE (VERTICALLY STACKED)
@@ -241,7 +263,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
      * @return JButton for searching
      */
     private JButton makeSearchButton() {
-        JButton searchButton = makeImgOnlyButtonWithResize(
+        JButton searchButton = ImgAndButtonUtilities.makeImgOnlyButtonWithResize(
                 SEARCH_BUTTON_IMG_PATH,
                 new Dimension(0, (int)(GUI_PREFERRED_SIZE.height/10))
         );
@@ -282,6 +304,10 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
                     frame, "Max Price cannot be less than Min Price.", "Price Input Error", JOptionPane.ERROR_MESSAGE);
             return; //Early terminate the search.
         }
+
+        //Assign a string representation of the selected cheese Object. Every Object has a
+        //toString(), so this can't break anything serious.
+        this.lastSearchedCheese = selections.selectedCheese().toString();
 
         DreamMenuItem dreamMenuItem =
                 new DreamMenuItem(
@@ -381,46 +407,11 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         }
     }
 
-    private JButton makeImgOnlyButtonWithResize(String imagePath, Dimension size) {
-        final BufferedImage sourceImage = ImgAndButtonUtilities.loadBufferedImage(imagePath); //IntelliJ warning final for inner class
-
-        JButton button = new JButton();
-        button.setPreferredSize(size);
-        button.setContentAreaFilled(false);
-
-        // Code adapted from
-        // https://stackoverflow.com/questions/78701695/how-do-i-scale-or-set-the-the-size-of-an-imageicon-in-java
-        // The original code used Image, but I have opted for BufferedImage based on this:
-        // https://docs.oracle.com/javase/tutorial/2d/images/index.html
-        // Rendering hints inspired by my work on a Java Chess gui and also this post here:
-        // https://stackoverflow.com/questions/59431324/java-how-to-make-an-antialiasing-line-with-graphics2d
-        button.setIcon(new Icon() {
-           @Override
-           public void paintIcon(Component c, Graphics g, int x, int y) {
-               Graphics2D g2d = (Graphics2D) g.create();
-
-               g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-               g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-               g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-               g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-
-               g2d.drawImage(sourceImage, x, y, c.getWidth(), c.getHeight(), c);
-
-               g2d.dispose();
-           }
-
-           @Override
-           public int getIconWidth() {
-               return button.getWidth();
-           }
-
-           @Override
-           public int getIconHeight() {
-               return button.getHeight();
-           }
-           });
-
-        return button;
+    private void resetForNewOrder() {
+        orderCreationPanel.clearFields();
+        filterEntryPanel.clearSelections();
+        //NB. ResultsPanel clears itself on use due to simpler functionality.
+        switchCard("welcomePanel"); //Switch back to welcome panel after a successful order
     }
 
 
@@ -457,38 +448,6 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
         switchCard("mainFilterPanel");
     }
 
-//TODO OLD ONPROCEEDTODETAILS CODE
-        //        StringBuilder sb = new StringBuilder();
-//        sb.append("You have added the following items to your order:");
-//
-//        Iterator<MenuItem> iterator = selectedItems.iterator();
-//        int counter = 0;
-//
-//        while (iterator.hasNext()) {
-//            MenuItem item = iterator.next();
-//            sb.append("\n ");
-//
-//            //PREPEND THE MESSAGE WITH A HAMBURGER (EVEN) OR SALAD (ODD) FOR EACH ITEM.
-//            // This was possibly not the most efficient way to spend my time...
-//            if (counter % 2 == 0) {
-//                sb.append("\uD83C\uDF54 \t");
-//            } else {
-//                sb.append("\uD83E\uDD57 \t");
-//            }
-//            sb.append(item.getMenuItemName());
-//
-//            counter++;
-//        }
-//
-//        JOptionPane.showMessageDialog(
-//                frame,
-//                sb.toString() + "\n\n Now just input your details and your order will be on its way.",
-//                "Items Added",
-//                JOptionPane.INFORMATION_MESSAGE
-//        );
-
-        //Tell the details panel what was ordered
-
 
     @Override
     public void onBackToMenuSelection() {
@@ -496,37 +455,57 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, P
     }
 
     @Override
-    public void onFinalSubmitOrder(String name, String phone, String email) {
-        if (!InputValidators.isFullName(name)) {
+    public void onFinalSubmitOrder(Order order) {
+        if (!InputValidators.isFullName(order.name())) {
             JOptionPane.showMessageDialog(
                     frame, InputValidators.ERROR_INVALID_NAME, "Invalid name", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (!InputValidators.isValidPhoneNo(phone)) {
+        if (!InputValidators.isValidPhoneNo(order.phoneNoAsString())) {
             JOptionPane.showMessageDialog(
                     frame, InputValidators.ERROR_INVALID_PHONE, "Invalid phone", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (!InputValidators.isValidEmail(email)) {
-            JOptionPane.showMessageDialog(
-                    frame, InputValidators.ERROR_INVALID_EMAIL, "Invalid email", JOptionPane.ERROR_MESSAGE);
-            return;
+        //WRITE THE ORDER OUT TO FILE VIA INTERFACE
+        for (GuiListener listener : listeners) {
+            listener.submitOrder(order);
         }
-
-        JOptionPane.showMessageDialog(
-                frame,
-                "Order submitted successfully!\n\nName: " + name + "\nPhone: " + phone,
-                "Order Confirmed",
-                JOptionPane.INFORMATION_MESSAGE);
-
-        //TODO SAVE TO FILE AND GO BACK TO SELECTION TO ADD. PROBABLY STORE LISTOF MENU ITEMS IN FIELD OF GUI.
     }
 
+    @Override
+    public void onOrderSubmissionSuccess(Order order) {
+        JOptionPane.showMessageDialog(
+                frame,
+                "Order submitted successfully!\n\nName: " + order.name() + "\nPhone: " + order.phoneNoAsString(),
+                "Order Confirmed",
+                JOptionPane.INFORMATION_MESSAGE,
+                SUCCESS_ICON);
+
+        resetForNewOrder();
+    }
+
+    @Override
+    public void onOrderSubmissionFailed(String errorMessage) {
+        JOptionPane.showMessageDialog(
+                frame,
+                errorMessage,
+                "Order submission failed",
+                JOptionPane.ERROR_MESSAGE,
+                FAIL_ICON);
+
+        resetForNewOrder();
+    }
+
+
+
+    @Override
     public void onProceedToDetails(List<MenuItem> selectedItems) {
-        detailsPanel.displayOrderSummary(selectedItems); //Tell details panel what was ordered
-        switchCard("detailsPanel");
+        orderCreationPanel.setCheeseForOrder(this.lastSearchedCheese);
+        orderCreationPanel.displayOrderSummary(selectedItems); //Tell order creation panel what was ordered
+        orderCreationPanel.addItemDetailsToPanel();
+        switchCard("orderCreationPanel");
     }
 
     // PUBLIC GETTERS

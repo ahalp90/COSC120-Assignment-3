@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class MenuSearcher implements GuiListener {
@@ -82,175 +83,6 @@ public class MenuSearcher implements GuiListener {
         return Map.copyOf(filterOptions);
     }
 
-//    public static DreamMenuItem getFilters(){
-//
-//        Map<Filter,Object> filterMap = new LinkedHashMap<>();
-//        String[] options = {"Yes", "No", "I don't mind"};
-//
-//        Type type = (Type) JOptionPane.showInputDialog(null,"Which menu item would you like?",appName, JOptionPane.QUESTION_MESSAGE,null, Type.values(), Type.BURGER);
-//        if(type==null)System.exit(0);
-//        filterMap.put(Filter.TYPE,type);
-//
-//        if(type==Type.BURGER) {
-//            Object[] allBuns = menu.getAllIngredientTypes(Filter.BUN).toArray();
-//            String bunType = (String) JOptionPane.showInputDialog(null, "Please select your preferred bun type:", appName, JOptionPane.QUESTION_MESSAGE, icon, allBuns, "");
-//            if (bunType == null) System.exit(0);
-//            if(!bunType.equals(allBuns[allBuns.length-1])) filterMap.put(Filter.BUN, bunType);
-//
-//            Set<Sauce> dreamSauces = new HashSet<>();
-//            int choosingSauces=0;
-//            while(choosingSauces==0) {
-//                Sauce dreamSauce = (Sauce) JOptionPane.showInputDialog(null, "Please select your preferred sauce:", appName, JOptionPane.QUESTION_MESSAGE, icon, Sauce.values(), Sauce.TOMATO);
-//                if (dreamSauce == null) System.exit(0);
-//                if(dreamSauce.equals(Sauce.NA)) {
-//                    dreamSauces=new HashSet<>();
-//                    break;
-//                }
-//                else dreamSauces.add(dreamSauce);
-//                choosingSauces = JOptionPane.showConfirmDialog(null,"Would you like to add another sauce?",appName, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,icon);
-//                if(choosingSauces==2) System.exit(0);
-//            }
-//            if(dreamSauces.size()>0) filterMap.put(Filter.SAUCE_S,dreamSauces);
-//        }
-//
-//        if(type==Type.SALAD){
-//            Object[] allLeafyGreens = menu.getAllIngredientTypes(Filter.LEAFY_GREENS).toArray();
-//            Set<String> dreamLeafyGreens = new HashSet<>();
-//            int choosingLeafyGreens=0;
-//            while(choosingLeafyGreens==0) {
-//                String leafyGreens = (String) JOptionPane.showInputDialog(null, "Please select your preferred leafy greens:", appName, JOptionPane.QUESTION_MESSAGE, icon, allLeafyGreens, "");
-//                if (leafyGreens == null) System.exit(0);
-//                if(!leafyGreens.equals(allLeafyGreens[allLeafyGreens.length-1])) dreamLeafyGreens.add(leafyGreens);
-//                else break;
-//                choosingLeafyGreens = JOptionPane.showConfirmDialog(null,"Would you like to add another leafy greens choice?",appName, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,icon);
-//                if(choosingLeafyGreens==2) System.exit(0);
-//            }
-//            if(dreamLeafyGreens.size()>0) filterMap.put(Filter.LEAFY_GREENS, dreamLeafyGreens);
-//
-//            boolean cucumber=false;
-//            int cucumberSelection = JOptionPane.showOptionDialog(null,"Would you like cucumber?",appName, JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,icon,options,options[0]);
-//            if(cucumberSelection==0) cucumber = true;
-//            if(cucumberSelection==-1) System.exit(0);
-//            if(cucumberSelection!=2)filterMap.put(Filter.CUCUMBER, cucumber);
-//
-//            Dressing dressing = (Dressing) JOptionPane.showInputDialog(null, "Please select your preferred dressing:", appName, JOptionPane.QUESTION_MESSAGE, icon, Dressing.values(), Dressing.FRENCH);
-//            if (dressing == null) System.exit(0);
-//            if(!dressing.equals(Dressing.NA)) filterMap.put(Filter.DRESSING, dressing);
-//        }
-//
-//        Protein dreamProtein = (Protein) JOptionPane.showInputDialog(null,"Please select your preferred protein:",appName, JOptionPane.QUESTION_MESSAGE,icon, Protein.values(), Protein.BEEF);
-//        if(dreamProtein==null)System.exit(0);
-//        if(!dreamProtein.equals(Protein.NA)) {
-//            Set<Protein> dreamProteins = new HashSet<>();
-//            dreamProteins.add(dreamProtein);
-//            filterMap.put(Filter.PROTEIN,dreamProteins);
-//        }
-//
-//        boolean tomato=false;
-//        int tomatoSelection = JOptionPane.showOptionDialog(null,"Would you like tomato?",appName, JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,icon,options,options[0]);
-//        if(tomatoSelection==0) tomato=true;
-//        if(tomatoSelection==-1) System.exit(0);
-//        if(tomatoSelection!=2) filterMap.put(Filter.TOMATO, tomato);
-//
-//        boolean pickle=false;
-//        int pickleSelection = JOptionPane.showConfirmDialog(null,"Would you like pickles?",appName, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,icon);
-//        if(pickleSelection==0) pickle = true;
-//        if(pickleSelection==-1) System.exit(0);
-//        if(pickleSelection!=2)filterMap.put(Filter.PICKLES, pickle);
-//
-//        int minPrice=-1,maxPrice = -1;
-//        while(minPrice<0) {
-//            String userInput = JOptionPane.showInputDialog(null, "Please enter the lowest price", appName, JOptionPane.QUESTION_MESSAGE);
-//            if(userInput==null)System.exit(0);
-//            try {
-//                minPrice = Integer.parseInt(userInput);
-//                if(minPrice<0) JOptionPane.showMessageDialog(null,"Price must be >= 0.",appName, JOptionPane.ERROR_MESSAGE);
-//            }
-//            catch (NumberFormatException e){
-//                JOptionPane.showMessageDialog(null,"Invalid input. Please try again.", appName, JOptionPane.ERROR_MESSAGE);
-//            }
-//        }
-//        while(maxPrice<minPrice) {
-//            String userInput = JOptionPane.showInputDialog(null, "Please enter the highest price", appName, JOptionPane.QUESTION_MESSAGE);
-//            if(userInput==null)System.exit(0);
-//            try {
-//                maxPrice = Integer.parseInt(userInput);
-//                if(maxPrice<minPrice) JOptionPane.showMessageDialog(null,"Price must be >= "+minPrice,appName, JOptionPane.ERROR_MESSAGE);
-//            }
-//            catch (NumberFormatException e){
-//                JOptionPane.showMessageDialog(null,"Invalid input. Please try again.", appName, JOptionPane.ERROR_MESSAGE);
-//            }
-//        }
-//        DreamMenuItem dream = new DreamMenuItem(filterMap,minPrice,maxPrice);
-//        System.out.println(dream.getInfo());
-//        return new DreamMenuItem(filterMap,minPrice,maxPrice);
-//    }
-
-//    public static void processSearchResults(DreamMenuItem dreamMenuItem){
-//        List<MenuItem> matching = menu.findMatch(dreamMenuItem);
-//        MenuItem chosenItem = null;
-//        if(matching.size()>0) {
-//            Map<String, MenuItem> options = new HashMap<>();
-//            StringBuilder infoToShow = new StringBuilder("Matches found!! The following items meet your criteria: \n");
-//            for (MenuItem match : matching) {
-//                infoToShow.append(match.getMenuItemInformation());
-//                options.put(match.getMenuItemName(), match);
-//            }
-//            String choice = (String) JOptionPane.showInputDialog(null, infoToShow + "\n\nPlease select which item you'd like to order:", appName, JOptionPane.INFORMATION_MESSAGE, icon, options.keySet().toArray(), "");
-//            if(choice==null) System.exit(0);
-//            chosenItem = options.get(choice);
-//        }
-//        else{
-//            int custom = JOptionPane.showConfirmDialog(null, """
-//                    Unfortunately none of our items meet your criteria :(
-//                    \tWould you like to place a custom order?\s
-//
-//                    **Price to be calculated at checkout and may exceed your chosen range**.""",appName, JOptionPane.YES_NO_OPTION);
-//            if(custom==0) chosenItem = new MenuItem(dreamMenuItem);
-//            else System.exit(0);
-//        }
-//        submitOrder(getUserContactInfo(),chosenItem);
-//        JOptionPane.showMessageDialog(null,"Thank you! Your order has been submitted. "+
-//                "Please wait for your name to be called out...",appName, JOptionPane.INFORMATION_MESSAGE);
-//    }
-
-//    public static Geek getUserContactInfo(){
-//        String name = JOptionPane.showInputDialog(null,"Please enter a name for the order.",appName, JOptionPane.QUESTION_MESSAGE);
-//        if(name==null) System.exit(0);
-//        long phoneNumber=0;
-//        while(phoneNumber==0) {
-//            try {
-//                String userInput = JOptionPane.showInputDialog(null, "Please enter your phone number. \nIt will be used as your order number.", appName, JOptionPane.QUESTION_MESSAGE);
-//                if(userInput==null) System.exit(0);
-//                phoneNumber = Long.parseLong(userInput);
-//            } catch (NumberFormatException e) {
-//                phoneNumber = Long.parseLong(JOptionPane.showInputDialog(null, "Invalid entry. Please enter your phone number.", appName, JOptionPane.ERROR_MESSAGE));
-//            }
-//            int length = String.valueOf(phoneNumber).length();
-//            if(length!=9) {
-//                phoneNumber=0;
-//                JOptionPane.showMessageDialog(null,"Invalid entry. Please enter your 10-digit phone number in the format 0412 123 345.",appName, JOptionPane.ERROR_MESSAGE);
-//            }
-//        }
-//        return new Geek(name,phoneNumber);
-//    }
-
-//    public static void submitOrder(Geek geek, MenuItem menuItem) {
-//        String filePath = geek.name().replace(" ","_")+"_"+menuItem.getMenuItemIdentifier()+".txt";
-//        Path path = Path.of(filePath);
-//        String lineToWrite = "Order details:\n\t" +
-//                "Name: "+geek.name()+
-//                " (0"+geek.orderNumber()+")";
-//        if(menuItem.getMenuItemIdentifier().equals("")) lineToWrite+="\n\nCUSTOM ORDER...\n"+menuItem.getMenuItemInformation();
-//        else lineToWrite+="\n\tItem: "+menuItem.getMenuItemName()+ " ("+menuItem.getMenuItemIdentifier()+")";
-//
-//        try {
-//            Files.writeString(path, lineToWrite);
-//        }catch (IOException io){
-//            System.out.println("Order could not be placed. \nError message: "+io.getMessage());
-//            System.exit(0);
-//        }
-//    }
 
     public static Menu loadMenu(String filePath) {
         Menu menu = new Menu();
@@ -391,6 +223,119 @@ public class MenuSearcher implements GuiListener {
     }
 
     /**
+     * Create customer order text file saved to system.
+     * Check directory access, allocate an unused filename and write the file to the directory.
+     * Calls a helper method to build the order String.
+     * <p> Calls helpers to request error message display in GUI if relevant.
+     * <p>Adapted from Ariel Halperin, COSC120 A1, writeCustomerOrderToTxt()</p>
+     * <p>Note, currently only allows max 10000 orders per phone number.
+     *
+     * @param order the record holding all attribute values relevant to the order.
+     * @return true if the order succeeded, false if it failed.
+     */
+    private boolean writeOrderToFile(Order order) {
+        // Check write permissions for directory. "./" must exist because it's the program's root
+        // directory, but if the write out path were moved then there should also be a dir.exists()
+        // check.
+        Path writeOutDir = Paths.get("./");
+        if (!Files.isWritable(writeOutDir)) {
+            String errorMsg = "Error: Directory " + writeOutDir + " is not writable.";
+            System.err.println(errorMsg);
+            notifyListenersOnOrderFailure(errorMsg);
+
+            return false;
+        }
+
+        int requestNo = 0; // Start counting at 0 because do-while always runs at least once.
+
+        // Short circuit the request to avoid unreasonable wait time. This problem would need to be
+        // resolved if any user has ordered 10000 times off the same phone number (yay!).
+        final int maxRequestsNo = 10000;
+        String pathString;
+        Path fullOutputPath;
+        // Loop to find a valid filepath that doesn't overwrite an existing order file.
+        do {
+            requestNo++;
+            pathString = "./Order_" + order.phoneNoAsString() + "_" + requestNo + ".txt";
+            fullOutputPath = Paths.get(pathString);
+        } while (Files.exists(fullOutputPath) || requestNo > maxRequestsNo);
+
+        if (requestNo == maxRequestsNo) {
+            System.err.println("When attempting to write order to output text, maxRequestsNo was "
+                    + "exceeded for the user's phone number of " + order.phoneNoAsString() + ".");
+
+            String errorMsg = "Error: It looks like you've ordered you've ordered " + maxRequestsNo
+                    + " times with this phone number.\n"
+                    + "You're amazing, but our ordering system is not built to handle this level of devotion."
+                    + "\n\nPlease go speak with management to claim a prize if this is the case."
+                    + "\nYou can still order off a different phone number while we wait for our "
+                    + "dev team to fix this for you.";
+
+            notifyListenersOnOrderFailure(errorMsg);
+            return false;
+        }
+        String orderString = orderStringToWriteOut(order); // Helper method builds String.
+
+        // WRITE OUT ORDER TO THE FILEPATH DETERMINED ABOVE
+        try {
+            Files.writeString(fullOutputPath, orderString);
+        } catch (IOException e) {
+            System.err.println("Error writing output file: " + fullOutputPath + "\n" + e.getMessage());
+
+            String errorMsg = "Error: Your order could not be saved to our system. We're really sorry!"
+                    + "\nYou're welcome to try again, or else go order at the front counter.";
+
+            notifyListenersOnOrderFailure(errorMsg);
+            return false;
+        }
+        System.out.println("Order has been saved to " + fullOutputPath + "\n");
+        return true;
+    }
+
+    private void notifyListenersOnOrderSuccess(Order order){
+        for (OrderingSystemListener listener : listeners) {
+            listener.onOrderSubmissionSuccess(order);
+        }
+    }
+
+    private void notifyListenersOnOrderFailure(String errorMessage) {
+        for (OrderingSystemListener listener : listeners) {
+            listener.onOrderSubmissionFailed(errorMessage);
+        }
+    }
+
+    /**
+     * Helper method to create a String formatted to meet the order details txt requirements.
+     * Adapted from Ariel Halperin, COSC120 A1 orderStringToWriteOut()
+     *
+     * @param order record containing all attribute values necessary to record an order.
+     * @return a String of the customer's order.
+     */
+    private static String orderStringToWriteOut(Order order) {
+        //Adaptation if the customer is making multiple orders
+        StringJoiner itemStrings = new StringJoiner("\n");
+        for (MenuItem item : order.menuItems()) {
+            itemStrings.add("\tItem: " + item.getMenuItemName() + (" (" + item.getMenuItemIdentifier() + ")"));
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Order details:\n");
+        sb.append("\tName: ").append(order.name())
+                .append(" (").append(order.phoneNoAsString()).append(")\n");
+        sb.append(itemStrings).append("\n\n");
+        sb.append("Customisation:");
+        //Don't add an extra blank line if nothing was written in the customisations box.
+        if (order.customisations() != null && !order.customisations().isBlank()) {
+            sb.append("\n").append(order.customisations());
+        }
+        sb.append("\n\n\n");
+        sb.append("Selected Cheese: ").append(order.selectedCheese()).append("\n\n\n");
+        sb.append("Please make this order to ").append(order.takeaway() ? "takeaway" : "have here").append(".");
+
+        return sb.toString();
+    }
+
+    /**
      * Capitalise the first letter of each word in a string, and make following letters lowercase.
      * <p> Sends to uppercase some common abbreviations.
      * Adapted with minor modification from this tutorial:
@@ -414,6 +359,14 @@ public class MenuSearcher implements GuiListener {
         for (String word : words) {
             if (abbreviations.contains(word.toUpperCase())) {
                 sb.append(word.toUpperCase());
+            } else if (word.length()>=3 && word.substring(0,2).equalsIgnoreCase("Gc")) {
+                //WORDS BEGINNING WITH GC? should maintain their origin capitalisation at the third letter
+                sb.append("G");
+                sb.append("c");
+                sb.append(word.charAt(2));
+                if (word.length() > 3) {
+                    sb.append(word.substring(3).toLowerCase());
+                }
             } else {
                 sb.append(Character.toUpperCase(word.charAt(0)));
                 // Only apply to words with more than one letter. Avoid possible IndexOutOfBoundsException.
@@ -461,14 +414,13 @@ public class MenuSearcher implements GuiListener {
         }
     }
 
-//    /**
-//     * Gets the available options in the composed Menu for the given Filter value.
-//     * @param filter a Filter value representing the menu attribute whose collected deduplicated values are needed
-//     * @return  List of Objects--immutable and not-null--of all available options for the given Filter.
-//     * "I don't mind" is appended as the last item.
-//     */
-//    public  static List<Object> getAvailableOptions(Filter filter) {
-//        return List.copyOf(menu.getAllIngredientTypes(filter));
-//    }
+    @Override
+    public void submitOrder(Order order) {
+        boolean success = writeOrderToFile(order);
+
+        if (success) {
+            notifyListenersOnOrderSuccess(order);
+        }
+    }
 
 }

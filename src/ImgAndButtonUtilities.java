@@ -49,7 +49,7 @@ public class ImgAndButtonUtilities {
         return bufferedImage;
     }
 
-    public JButton makeImgOnlyButtonWithResize(String imagePath, Dimension size) {
+    public static JButton makeImgOnlyButtonWithResize(String imagePath, Dimension size) {
         final BufferedImage sourceImage = loadBufferedImage(imagePath); //IntelliJ warning final for inner class
 
         JButton button = new JButton();
