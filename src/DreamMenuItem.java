@@ -1,49 +1,102 @@
 import java.util.*;
 
-public class DreamMenuItem {
+/**
+ * Class responsible for holding the generic attributes to be ascribed to all menu items.
+ * Also used to represent user search criteria--as these match menu items' generic attributes.
+ * priceMin/Max fields pertain exclusively to search objects.
+ */
+public final class DreamMenuItem {
     /**
      * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
+     * Adapted by Ariel Halperin.
      */
     private final Map<Filter,Object> filterMap;
     private final double minPrice;
     private final double maxPrice;
 
+    /**
+     * Constructor for DreamMenuItems used as user search criteria. Accepts min and max price parameters.
+     * @param filterMap immutable Map of Filters and Objects representing this item's attributes
+     *                  <p><b>Note, cannot hold nulls</b></p>
+     * @param minPrice double
+     * @param maxPrice double
+     */
     public DreamMenuItem(Map<Filter, Object> filterMap, double minPrice, double maxPrice) {
-        this.filterMap=new HashMap<>(filterMap);
+        this.filterMap=Map.copyOf(filterMap);
         this.minPrice=minPrice;
         this.maxPrice=maxPrice;
     }
+
+    /**
+     * Overloaded constructor for building DreamMenuItems read directly from menu data.
+     * <p>These don't logically have a min or max price, so it is set to -1</p>
+     * @param filterMap immutable Map of Filters and Objects representing this item's attributes
+     *                  <p><b>Note, cannot hold nulls</b></p>
+     */
     public DreamMenuItem(Map<Filter, Object> filterMap) {
-        this.filterMap=new HashMap<>(filterMap);
+        this.filterMap=Map.copyOf(filterMap);
         this.minPrice=-1;
         this.maxPrice=-1;
     }
 
+    /**
+     * Gets a Map of all Filters and their values stored by this DreamMenuItem.
+     * @return Map of Filter(key) object(value)
+     */
     public Map<Filter, Object> getAllFilters() {
         return new HashMap<>(filterMap);
     }
 
+    /**
+     * Gets the value associated with the parameter key for this DreamMenuItem
+     * @param key a Filter value
+     * @return the value associated with the parameter key
+     */
     public Object getFilter(Filter key){return this.filterMap.get(key);}
 
+    /**
+     * Returns the value assigned to the TYPE key for this DreamMenuItem
+     * @return the value that matches the Filter.TYPE key (probably a Type enum value),
+     * <b>or null</b> if the key doesn't exist
+     */
     public Object getDreamItemType() {
         return this.filterMap.getOrDefault(Filter.TYPE, null);
     }
 
+    /**
+     * Gets the min price assigned to this DreamMenuItem
+     * @return double
+     */
     public double getMinPrice() {return minPrice;}
 
+    /**
+     * Gets the max price assigned to this DreamMenuItem
+     * @return double
+     */
     public double getMaxPrice() {return maxPrice;}
 
+    /**
+     * Get a String of this DreamMenuItem's properties.
+     * Iterates through its Filters and formats them into a clean, multi-line string.
+     *
+     * @return String of its values for all Filters-associated values held
+     */
     public String getInfo(){
-        StringBuilder description = new StringBuilder();
+        StringBuilder description = new StringBuilder(); //Main String holding long descriptions and simple extras
+        //simple ingredients that are only either true (present) or false (not)
         StringBuilder extras = new StringBuilder("\nExtras: ");
         for(Filter key: filterMap.keySet()) {
             if(getFilter(key) instanceof Collection<?>){
+                //Create section headers for collections with an indented arrow for their sub-types
                 description.append("\n").append(key).append(":");
                 for(Object x:((Collection<?>) getFilter(key)).toArray()) description.append("\n").append(" --> ").append(x);
             }
+            //append filter names if true
             else if(getFilter(key).equals(true)) extras.append(key).append(", ");
+            //append any values that are not false; implicitly includes values tied to enum classes
             else if(!getFilter(key).equals(false)) description.append("\n").append(key).append(": ").append(getFilter(key));
         }
+        //extras String goes at the end of the description String
         description.append(extras.substring(0,extras.length()-2));
         return description.toString();
     }

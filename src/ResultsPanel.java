@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,15 +74,10 @@ public class ResultsPanel {
             JLabel noItemsLabel = new JLabel("No Items to Display.", SwingConstants.CENTER);
             itemsListPanel.add(noItemsLabel);
         } else {
-            //Create a DecimalFormat here to share between the iterations. Should be threadsafe to
-            //share due to constrained context.
-            DecimalFormat df = new DecimalFormat("#,##0.00");
-
             for (MenuItem item : items) {
-                MenuItemPanel itemPanel = new MenuItemPanel(item, df);
+                MenuItemPanel itemPanel = new MenuItemPanel(item);
                 menuItemPanels.add(itemPanel);
                 itemsListPanel.add(itemPanel.getCorePanel());
-
                 itemsListPanel.add(Box.createRigidArea(new Dimension(0, 5))); //Add a small separator
             }
         }

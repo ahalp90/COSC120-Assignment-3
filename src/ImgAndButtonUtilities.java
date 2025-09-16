@@ -9,9 +9,19 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class ImgAndButtonUtilities {
+/**
+ * A public utility class for loading images and making buttons with responsively resized images.
+ * Contains only static methods.
+ */
+public final class ImgAndButtonUtilities {
     //CONSTANT FOR ACCEPTABLE IMAGE EXTENSIONS
     private static final List<String> imgExtensions = List.of("png", "jpg", "jpeg", "gif");
+
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     * A trick I learned when writing tests and aiming for 100% coverage in another project.
+     */
+    private ImgAndButtonUtilities() {}
 
     /**
      * Loads a BufferedImage from a given path.
@@ -49,6 +59,21 @@ public class ImgAndButtonUtilities {
         return bufferedImage;
     }
 
+    /**
+     * Creates a JButton that displays a single, responsively resized image as its content.
+     * <p>The button is transparent--only its icon is shown.
+     * <p>This uses custom drawing to scale to the provided dimensions.
+     *
+     * Code for responsive icon painting adapted from:
+     * https://stackoverflow.com/questions/78701695/how-do-i-scale-or-set-the-the-size-of-an-imageicon-in-java
+     * The original code used Image, but I have opted for BufferedImage based on this:
+     * https://docs.oracle.com/javase/tutorial/2d/images/index.html
+     * Rendering hints inspired by my work on a Java Chess gui and also this post here:
+     * https://stackoverflow.com/questions/59431324/java-how-to-make-an-antialiasing-line-with-graphics2d
+     * @param imagePath String of the file path of the image to use for the button
+     * @param size Dimension of the preferred size of the button
+     * @return a JButton that shows the scaled image.
+     */
     public static JButton makeImgOnlyButtonWithResize(String imagePath, Dimension size) {
         final BufferedImage sourceImage = loadBufferedImage(imagePath); //IntelliJ warning final for inner class
 
@@ -56,12 +81,6 @@ public class ImgAndButtonUtilities {
         button.setPreferredSize(size);
         button.setContentAreaFilled(false);
 
-        // Code adapted from
-        // https://stackoverflow.com/questions/78701695/how-do-i-scale-or-set-the-the-size-of-an-imageicon-in-java
-        // The original code used Image, but I have opted for BufferedImage based on this:
-        // https://docs.oracle.com/javase/tutorial/2d/images/index.html
-        // Rendering hints inspired by my work on a Java Chess gui and also this post here:
-        // https://stackoverflow.com/questions/59431324/java-how-to-make-an-antialiasing-line-with-graphics2d
         button.setIcon(new Icon() {
             @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -95,7 +114,7 @@ public class ImgAndButtonUtilities {
      * Helper to create a placeholder image for an image that failed to load.
      * <p>I'll just be a 50*50 yellow square, but it'll allow the user to order while signalling an image load failure.
      * <p>Code adapted from https://stackoverflow.com/questions/1440750/set-bufferedimage-to-be-a-color-in-java
-     * @return BufferedImage
+     * @return a 50x50 yellow BufferedImage
      */
     public static BufferedImage placeHolderImage() {
         BufferedImage placeholder = new BufferedImage(50,50,BufferedImage.TYPE_INT_RGB);

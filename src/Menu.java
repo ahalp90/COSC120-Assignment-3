@@ -1,11 +1,27 @@
 import java.util.*;
 
+/**
+ * Holds the entire collection of MenuItems available in the restaurant.
+ * <p>Also provides methods to search the menu and generate lists of available ingredients.
+ * <p>Created by Dr Andreas Shepley for COSC120 on 25/04/2025
+ * <p>Adapted by Ariel Halperin
+ */
 public final class Menu {
-    /**
-     * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
-     */
-    private final Set<MenuItem> menu = new HashSet<>();
 
+    private final Set<MenuItem> menu;
+
+    /**
+     * Creates an empty Menu.
+     * Menu items should be added using the addItem(MenuItem) method.
+     */
+    public Menu() {
+        this.menu = new HashSet<>();
+    }
+
+    /**
+     * Adds a new menu item to this menu.
+     * @param menuItem the MenuItem to add. Must not be null.
+     */
     public void addItem(MenuItem menuItem){
         this.menu.add(menuItem);
     }
@@ -65,6 +81,15 @@ public final class Menu {
         return List.copyOf(options);
     }
 
+    /**
+     * Finds all menu items that match the user's search criteria.
+     * <p>Iterates through every item on the menu and makes two checks:
+     * <li>Compares attributes using the DreamMenuItem.matches() method.
+     * <li>Compares the menu item's price against the user's ideal min and max prices.
+     * <p>An item that passes both checks will be included in the results
+     * @param dreamMenuItem DreamMenuItem representing the user's search criteria
+     * @return an immutable List of MenuItems of all matching items. The list will be empty if no matches are found.
+     */
     public List<MenuItem> findMatch(DreamMenuItem dreamMenuItem){
         List<MenuItem> matching = new ArrayList<>();
         for(MenuItem menuItem: menu){
@@ -75,5 +100,9 @@ public final class Menu {
         return List.copyOf(matching);
     }
 
+    /**
+     * Returns a copy of the complete set of all menu items
+     * @return an immutable Set of MenuItems containing all items in this Menu.
+     */
     public Set<MenuItem> getMenuItems(){return Set.copyOf(menu);}
 }

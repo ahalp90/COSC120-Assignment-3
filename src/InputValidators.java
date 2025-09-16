@@ -1,5 +1,8 @@
 import java.util.regex.Pattern;
 
+/**
+ * A utility class of static methods for input validation of phone number and name Strings
+ */
 public final class InputValidators {
     //All patterns private--no need for implementation details to be shared.
     //Adapted from COSC120 Tute 4 solution 3_4, FindADog.java, ln94-98
@@ -18,6 +21,11 @@ public final class InputValidators {
             +"\nPlease enter numbers only."
             +"\nThe only non-numeric character may be a full-stop as a decimal separator.\n"
             +"e.g. 3.50";
+
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private InputValidators() {}
 
     /**
      * Validates whether an input phone number starts with a 0 and is followed by 9 digits.

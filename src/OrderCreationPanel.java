@@ -7,7 +7,7 @@ import java.text.DecimalFormat;
 import java.util.StringJoiner;
 import java.util.List;
 
-public class OrderCreationPanel {
+public final class OrderCreationPanel {
 
     private final JPanel corePanel;
     private final JTextArea orderSummaryArea;

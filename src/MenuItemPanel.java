@@ -1,20 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.text.DecimalFormat;
 
 public class MenuItemPanel {
     private final JPanel corePanel;
     private final JCheckBox checkBox;
     private final MenuItem menuItem;
-    private final DecimalFormat df;
 
     private static final Dimension IMG_THUMBNAIL_DIMENSION = new Dimension(100,100);
     private static final int CORE_PANEL_HEIGHT = 300;
 
-    public MenuItemPanel(MenuItem menuItem, DecimalFormat df) {
+    public MenuItemPanel(MenuItem menuItem) {
         this.menuItem = menuItem;
-        this.df = df;
 
         //SET UP THE MAIN PANEL
         this.corePanel = new JPanel(new BorderLayout(10,0));
@@ -109,13 +106,6 @@ public class MenuItemPanel {
 
         String dreamInfoHtml = this.menuItem.getDreamMenuItemInfo().replace("\n", "<br>");
         sb.append(dreamInfoHtml);
-
-//        //Chuck the price in if it's not a custom item--i.e. normal menu item
-//        if (this.menuItem.isMenuItemNotCustomItem()) {
-//            sb.append("<br><br><b>Price: $")
-//                    .append(this.df.format(this.menuItem.getPrice()))
-//                    .append("</b>");
-//        }
 
         sb.append("</html>");
 

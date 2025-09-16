@@ -14,7 +14,7 @@ import java.util.List;
  * <li>ALLOWS EXPLICIT 'NONE' SELECTION: PROTEIN, CHEESE, LEAFY GREENS, SAUCES
  *
  */
-public class FilterEntryPanel {
+public final class FilterEntryPanel {
     // FIELDS FOR STORING SELECTOR SELECTIONS BEFORE PROCESSING; Map would be possible, but less explicit = hard to maintain.
     private final JComboBox<Type> itemTypeSelector;
     private final JComboBox<Object> bunSelector;
@@ -34,6 +34,10 @@ public class FilterEntryPanel {
 
     private static final int MAIN_SPLIT_HORIZONTAL_PADDING = 20;
 
+    /**
+     * Creates a FilterEntryPanel. Core view for inputing user item selector filters
+     * @param filterOptions a Map of Filter(key) List of Objects(value) to present for selectors
+     */
     public FilterEntryPanel(Map<Filter, List<Object>> filterOptions) {
 
         //INITIALISE ALL FIELD ITEMS
@@ -110,8 +114,6 @@ public class FilterEntryPanel {
         JPanel saladFiltersPanel = makeSaladFiltersPanel();
         JPanel typeFilterPanel = makeTypeFilterPanel();
 
-
-
         typeSpecificFilterCardsPanel.add(burgerFiltersPanel, "burgerFilters");
         typeSpecificFilterCardsPanel.add(saladFiltersPanel, "saladFilters");
 
@@ -159,15 +161,12 @@ public class FilterEntryPanel {
         JPanel topRow = new JPanel(new GridLayout(1,2,MAIN_SPLIT_HORIZONTAL_PADDING, 0));
         JPanel picklesAndTomatoPanel = makePicklesAndTomatoSelectorPanel();
         JPanel proteinPromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.PROTEIN);
-//
-//        picklesAndTomatoPanel.setBorder(BorderFactory.createEmptyBorder(0,10,0,5));
-//        proteinPromptAndSelectorPanel.setBorder(BorderFactory.createEmptyBorder(0,5,0,10));
 
         topRow.add(picklesAndTomatoPanel);
         topRow.add(proteinPromptAndSelectorPanel);
 
         //BOTTOM AREA: cheese and price in a horizontal layout
-        JPanel bottomRow = new JPanel(new GridLayout(1, 2, MAIN_SPLIT_HORIZONTAL_PADDING, 0)); //20px horizontal gap between cheese and prices
+        JPanel bottomRow = new JPanel(new GridLayout(1, 2, MAIN_SPLIT_HORIZONTAL_PADDING, 0));
         JPanel cheesePromptAndSelectorPanel = makeCheesePromptAndSelectorPanel();
         JPanel pricePromptAndSelectorPanel =  makePricePromptAndSelectorPanel();
 
@@ -211,10 +210,8 @@ public class FilterEntryPanel {
         //COMPOSE THE LEFT SIDE OF THE PANEL - DRESSING, SPACER AND CUCUMBERS
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,10));
-//        JLabel blankLabel = new JLabel();
-//        blankLabel.setOpaque(false);
+
         leftPanel.add(dressingPromptAndSelectorPanel, BorderLayout.NORTH);
-//        leftPanel.add(blankLabel);
         leftPanel.add(cucumberPromptAndSelectorPanel, BorderLayout.CENTER);
 
         // COMPOSE AND RETURN THE FINAL PANEL
@@ -228,10 +225,6 @@ public class FilterEntryPanel {
      * Composes the bun and sauces prompt and selector panels into a single panel for burger-only filters.
      * This is a nested GridLayout where the RIGHT 50% goes to the sauces multi-selector,
      * and the LEFT is shared equally between the bun prompt selector and an empty label.
-//     * This is a GridBagLayout that looks like:
-//     * <li>LEFT 30% bun selection, top anchored and horizontal stretch</li>
-//     * <li>20% empty glue</li>
-//     * <li>RIGHT 50% sauces multi-selector</li>
      * @return JPanel for all burger-only filter selection
      */
     private JPanel makeBurgerFiltersPanel() {
@@ -291,7 +284,7 @@ public class FilterEntryPanel {
         priceSelectorPanel.setLayout(new BoxLayout(priceSelectorPanel, BoxLayout.X_AXIS));
 
 
-        //Use <nobr> to stop line breaking depending on layout changes
+        //Used <nobr> to stop line breaking depending on layout changes
         //https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/nobr
         JLabel priceMinLabel = new JLabel("<html><b>Min. <nobr>price: $</nobr></b></html>");
         JLabel priceMaxLabel = new JLabel("<html><b>Max. <nobr>price: $</nobr></b></html>");
@@ -497,8 +490,10 @@ public class FilterEntryPanel {
     /**
      * Validates the relevant ButtonGroup selection--whether 'Yes', 'No' or 'I don't mind' (or equivalent)
      * @param buttonGroup the ButtonGroup to query
+     * @param dontMindText String of the ButtonGroup's text for I_DONT_MIND selection
      * @return true for 'Yes' selection, false for 'No' selection, and null for 'I don't mind' or equivalent selection.
-     * @throws IllegalStateException throws exception if the ButtonGroup does not contain 'Yes' or 'No' options.
+     * @throws IllegalStateException throws exception if the ButtonGroup does not contain 'Yes', 'No'
+     * or the provided dontMindText.
      */
     private Boolean getBooleanSelectionFromGroup(ButtonGroup buttonGroup, String dontMindText) throws IllegalStateException {
         String selection = getSelectedButtonText(buttonGroup);
@@ -586,9 +581,8 @@ public class FilterEntryPanel {
     }
 
     /**
-     * Creates a new FilterSelections record based on the relevant field values.
-     * <p>This will thrown an NPE if Filter class stops providing I_DONT_MIND values for TOMATO and CUCUMBER.
-     * However, this should not happen as the program is currently organised.
+     * Gathers the current state of all input components and bundles them into an immutable Record.
+     * <p>This will deliberately throw an NPE if Filter class stops providing I_DONT_MIND values for TOMATO and CUCUMBER.
      * @return new FilterSelections record.
      */
     public FilterSelections getFilterSelections(){

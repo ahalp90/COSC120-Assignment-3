@@ -2,6 +2,10 @@ import java.util.List;
 
 public enum Filter {
     /**
+     * Identifes the menu filtering categories read in from the source inventory file and to be used in UI filtering.
+     * This is a Smart enum.
+     * It centralises business logic and methods around expected properties attached to its values.
+     *
      * Original values by Dr Andreas Shepley for COSC120 on 25/04/2025.
      * Smart Enum functionality added by Ariel Halperin.
      */
@@ -16,7 +20,9 @@ public enum Filter {
     LEAFY_GREENS(null),
     SAUCE_S(Sauce.class);
 
-    // This field holds the reference to the public enum relevant to this Filter
+    /**
+     * This field holds the reference to the public enum relevant to this Filter
+     */
     private final Class<? extends Enum<?>> relevantEnumClass;
 
     /**
@@ -32,6 +38,7 @@ public enum Filter {
     /**
      * Gets the values of the public enum connected to this Filter value
      * <p><b>Null must be guarded</b> by hasEnumRepresentingItsValues() call.
+     *
      * @return <b>immutable List</b> of the values of the enum class relevant to this Filter,
      * <b>or null</b> if none is attached
      */
@@ -42,6 +49,11 @@ public enum Filter {
         return List.of(relevantEnumClass.getEnumConstants());
     }
 
+    /**
+     * Prettified toString of the values
+     * @return String
+     */
+    @Override
     public String toString(){
         return switch (this) {
             case TYPE -> "Type";
@@ -65,7 +77,7 @@ public enum Filter {
     public String filterPrompt() {
         return switch (this) {
             case TYPE -> "<html><b>Select item type:</b></html>";
-            case BUN -> "<html><b>Bun choice?</b</html>";
+            case BUN -> "<html><b>Bun choice?</b></html>";
             case PROTEIN -> "<html><b>Proteins?</b> <i>(hold ctrl to select >1)</i></html>";
             case CHEESE -> "<html><b>Cheese:</b></html>";
             case PICKLES -> "<html><b>Pickles?</b></html>";
@@ -201,17 +213,6 @@ public enum Filter {
         };
     }
 
-//    /**
-//     * Identifies Filters that do not have dedicated Enums of their possible values and cannot
-//     * be represented by a simple true/false/null distinction.
-//     * @return true if menu data is needed for filter, false otherwise.
-//     */
-//    public boolean needsMenuDataForSelectorOptions() {
-//        return switch (this){
-//            case BUN, CHEESE, LEAFY_GREENS -> true;
-//            default -> false;
-//        };
-//    }
 
     /**
      * Identifies Filters that are relevant to Burger selection

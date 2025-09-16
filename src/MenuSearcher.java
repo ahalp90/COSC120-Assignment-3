@@ -5,9 +5,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class MenuSearcher implements GuiListener {
+/**
+ * The core class of the Overloaded Burgers menu searcher.
+ * <p>Responsible for loading the menu from a file, handling important GUI events like
+ * search requests and order submissions, and coordinating interaction between stored data (the Menu)
+ * and the view (OrderGui).
+ * <p>Implements GuiListener interface to receive events from the view.
+ */
+public final class MenuSearcher implements GuiListener {
     /**
      * Created by Dr Andreas Shepley for COSC120 on 25/04/2025
+     * Adapted by Ariel Halperin
      */
     private static final String MENU_TXT_PATH = "./menu.txt";
 
@@ -27,6 +35,12 @@ public class MenuSearcher implements GuiListener {
 
     /**
      * Main OverLoaded Burgers menu search program entry point
+     * <p>Initialises the application by:
+     * <li>loading the Menu,
+     * <li>creating the main controller and GUI,
+     * <li>setting up listeners for commincation.
+     * <p>Uses InvokeLater to ensure all Swing components are created on the EDT.
+     *
      * @param args command-line arguments not required.
      */
     public static void main(String[] args) {
@@ -54,9 +68,6 @@ public class MenuSearcher implements GuiListener {
             gui.addGuiListener(menuSearcher);
             menuSearcher.addOrderingSystemListener(gui);
         });
-
-//        DreamMenuItem dreamMenuItem = getFilters();
-//        processSearchResults(dreamMenuItem);
     }
 
 
@@ -83,7 +94,12 @@ public class MenuSearcher implements GuiListener {
         return Map.copyOf(filterOptions);
     }
 
-
+    /**
+     * Loads the menu from a text file and parses it into a Menu object.
+     * <p>Reads the file line-by-line, parsing each entry into a MenuItem with a composed DreamMenuItem.
+     * @param filePath String of the path to the menu data file
+     * @return a new Menu object populated with the menu items from the file.
+     */
     public static Menu loadMenu(String filePath) {
         Menu menu = new Menu();
         Path path = Path.of(filePath);
@@ -113,7 +129,7 @@ public class MenuSearcher implements GuiListener {
             }catch (IllegalArgumentException e){
                 System.out.println("Error in file. Type data could not be parsed for item on line "+(i+1)
                         +". Terminating. \nError message: "+e.getMessage());
-                System.exit(0);
+                System.exit(1);
             }
 
             String menuItemName = capitaliseFirstLettersOnly(singularInfo[2].strip());
@@ -124,7 +140,7 @@ public class MenuSearcher implements GuiListener {
             }catch (NumberFormatException n){
                 System.out.println("Error in file. Price could not be parsed for item on line "+(i+1)
                         +". Terminating. \nError message: "+n.getMessage());
-                System.exit(0);
+                System.exit(1);
             }
 
             String bun = capitaliseFirstLettersOnly(singularInfo[4].toLowerCase().strip());
@@ -135,7 +151,7 @@ public class MenuSearcher implements GuiListener {
             }catch (IllegalArgumentException e){
                 System.out.println("Error in file. Protein data could not be parsed for item on line "+(i+1)
                         +". Terminating. \nError message: "+e.getMessage());
-                System.exit(0);
+                System.exit(1);
             }
 
             boolean pickles = false;
@@ -156,7 +172,7 @@ public class MenuSearcher implements GuiListener {
             }catch (IllegalArgumentException e){
                 System.out.println("Error in file. Dressing data could not be parsed for item on line "+(i+1)
                         +". Terminating. \nError message: "+e.getMessage());
-                System.exit(0);
+                System.exit(1);
             }
 
             //CHEESES - only add to the Cheeses set if there's a non-blank entry in the closure that's not NA
@@ -188,7 +204,7 @@ public class MenuSearcher implements GuiListener {
                     } catch (IllegalArgumentException e){
                         System.out.println("Error in file. Sauce/s data could not be parsed for item on line "+(i+1)
                                 +". Terminating. \nError message: "+e.getMessage());
-                        System.exit(0);
+                        System.exit(1);
                     }
                 }
             }
@@ -292,12 +308,20 @@ public class MenuSearcher implements GuiListener {
         return true;
     }
 
+    /**
+     * Notifies all registered listeners that an order was submitted successfully.
+     * @param order the Order that was successfully processed
+     */
     private void notifyListenersOnOrderSuccess(Order order){
         for (OrderingSystemListener listener : listeners) {
             listener.onOrderSubmissionSuccess(order);
         }
     }
 
+    /**
+     * Notifies all registered listeners that an order submission failed
+     * @param errorMessage a user-friendly message String describing the reason for the failure.
+     */
     private void notifyListenersOnOrderFailure(String errorMessage) {
         for (OrderingSystemListener listener : listeners) {
             listener.onOrderSubmissionFailed(errorMessage);
@@ -387,33 +411,62 @@ public class MenuSearcher implements GuiListener {
 
     //              ***LISTENER INTERFACE INTERACTION METHODS***
 
+    /**
+     * Registers a listener to be notified of events originating here
+     * (e.g. for search results or oder status updates).
+     * <p>Primarily intended for the OrderGui, but in theory this could sensibly expand.
+     * @param listener the OrderingSystemListener to add
+     */
     public void addOrderingSystemListener(OrderingSystemListener listener) {
         this.listeners.add(listener);
     }
 
+    /**
+     * Handles the search request from the GUI. Uses the Menu to find matches
+     * and notifies listeners of results or lack thereof.
+     *
+     * @param dreamMenuItem DreamMenuItem representing all the user's selected filters and price range.
+     *                      Will not be null when passed in.
+     */
     @Override
     public void performSearch(DreamMenuItem dreamMenuItem) {
         List<MenuItem> matching = menu.findMatch(dreamMenuItem);
 
-        if (matching != null && !matching.isEmpty()) {
+        if (!matching.isEmpty()) {
             notifyListenersOnSearchResults(matching);
         } else {
             notifyListenersOnNoMatchesFound(dreamMenuItem);
         }
     }
 
+    /**
+     * Notifies all registered listeners of search results
+     * @param matching a List of MenuItems that matched the search criteria
+     */
     private void notifyListenersOnSearchResults(List<MenuItem> matching) {
         for (OrderingSystemListener listener : listeners) {
             listener.onSearchResults(matching);
         }
     }
 
+    /**
+     * Notifies all registered listeners that no matches were found for a search.
+     * <p>Provides the full menu as a default option.
+     *
+     * @param dreamMenuItem DreamMenuItem of the user's search criteria that did not match.
+     */
     private void notifyListenersOnNoMatchesFound(DreamMenuItem dreamMenuItem) {
         for (OrderingSystemListener listener : listeners) {
             listener.onNoMatchesFound(this.getAllMenuItems());
         }
     }
 
+    /**
+     * Handles order submission requests from the GUI.
+     * <p>Attempts to write the order to a file and notifies listeners of the success or failure.
+     * @param order Order record containing all customer details, selected items and customisations.
+     *              Will not be null when passed in.
+     */
     @Override
     public void submitOrder(Order order) {
         boolean success = writeOrderToFile(order);

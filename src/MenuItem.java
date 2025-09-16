@@ -13,22 +13,21 @@ public final class MenuItem {
     private final double price;
     private final DreamMenuItem dreamMenuItem;
 
+    //MenuItem is called to describe itself from within loops--constant DF
+    private static final DecimalFormat DF = new DecimalFormat("0.00");
+
     //constructor/s
-    public MenuItem(String menuItemIdentifier, String menuItemName, double price, String description, DreamMenuItem dreamMenuItem) {
+    public MenuItem(String menuItemIdentifier,
+                    String menuItemName,
+                    double price,
+                    String description,
+                    DreamMenuItem dreamMenuItem) {
         this.menuItemIdentifier = menuItemIdentifier;
         this.menuItemName = menuItemName;
         this.price = price;
         this.description = description;
         this.dreamMenuItem=dreamMenuItem;
     }
-//
-//    public MenuItem(DreamMenuItem dreamMenuItem) {
-//        this.menuItemIdentifier = "";
-//        this.menuItemName = "CUSTOM ORDER";
-//        this.price = -1;
-//        this.description = "custom - see preferences";
-//        this.dreamMenuItem=dreamMenuItem;
-//    }
 
     //getters
     public String getMenuItemIdentifier() {return menuItemIdentifier;}
@@ -55,15 +54,12 @@ public final class MenuItem {
 
     //menu info
     public String getMenuItemInformation(){
-        DecimalFormat df = new DecimalFormat("0.00");
-        String output = "\n*******************************************";
-//        if(!getMenuItemIdentifier().equals("")) {
-//            output+="\n\t"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription() + "\n";
-//        }
-        output+="\n"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription() + "\n";
 
+        String output = "\n*******************************************";
+
+        output+="\n"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription() + "\n";
         output+=getDreamMenuItem().getInfo();
-//        if(price==-1) return output; else return output+"\n\nPrice: $"+df.format(this.getPrice());
-        return output+"\n\nPrice: $"+df.format(this.getPrice());
+
+        return output+"\n\nPrice: $"+ DF.format(this.getPrice());
     }
 }
