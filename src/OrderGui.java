@@ -5,11 +5,13 @@ import java.util.*;
 import java.util.List;
 
 /**
- * The centralised GUI controller class. Coordinates views, as well as interface between view input panels and back-end MenuSearcher.
+ * The centralised GUI controller class.
+ * <p>Coordinates views, as well as interface between view input panels and back-end MenuSearcher.
+ * <p>Acts as listener for events from child panels and from the model core (MenuSearcher)</p>
  *
  * Images created by ChatGPT5.
  */
-public class OrderGui implements OrderingSystemListener, ResultsPanelListener, OrderCreationPanelListener {
+public final class OrderGui implements OrderingSystemListener, ResultsPanelListener, OrderCreationPanelListener {
     private final JFrame frame;
     private final CardLayout topCardLayout = new CardLayout();
     private final JPanel topCardPanel = new JPanel(topCardLayout);
@@ -32,12 +34,13 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
     //Pre-cast to String to reduce exposure by non-final field.
     private String lastSearchedCheese;
 
-    //***CONSTANTS***
+    //                              ***CONSTANTS***
     private static final Dimension GUI_PREFERRED_SIZE = new Dimension(1024, 576);
     private static final String SEARCH_BUTTON_IMG_PATH = "images/search-now.png";
     private static final String WELCOME_BACKGROUND_IMG_PATH = "images/welcome-background.png";
     private static final String SIDE_BANNER_IMG_PATH = "images/side_banner.png";
 
+    //IMAGES
     private static final BufferedImage FRAME_ICON_IMAGE =
             ImgAndButtonUtilities.loadBufferedImage("images/overloaded_burgers_graphic_small.png");
     private static final ImageIcon SUCCESS_ICON = new ImageIcon(
@@ -46,6 +49,14 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
             ImgAndButtonUtilities.loadBufferedImage("images/fail_icon.png"));
 
 
+    /**
+     * Constructor for the main GUI for OverLoaded Burgers ordering system.
+     * <p> Initialises the main frame, instantiates all major view panels,
+     * sets itself as the listener for those panels, and composes the final UI.
+     *
+     * @param filterOptions Map of available options for each Filter, used to
+     *                      populate the FilterEntryPanel selectors based on read-in menu data.
+     */
     public OrderGui(Map<Filter, List<Object>> filterOptions) {
         //CREATE VIEW PANELS
         this.filterEntryPanel = new FilterEntryPanel(filterOptions);
@@ -73,13 +84,22 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         frame.setVisible(true);
     }
 
-    public void composeTopCardPanel(){
+    /**
+     * Compose the top-level Panel that holds all other views managed by the CardLayout. Give each view a name.
+     */
+    private void composeTopCardPanel(){
         topCardPanel.add(makeWelcomeCardPanel(), "welcomePanel");
         topCardPanel.add(makeMainBurgerFilterPanel(), "mainFilterPanel");
         topCardPanel.add(resultsPanel.getCorePanel(), "resultsPanel");
         topCardPanel.add(orderCreationPanel.getCorePanel(), "orderCreationPanel");
     }
 
+    /**
+     * Factory helper that creates the welcome screen Panel.
+     * <p>Has a responsive background image and an "Order Now" button to proceed to the main filter view.
+     *
+     * @return JPanel for the welcome card
+     */
     private JPanel makeWelcomeCardPanel() {
         //LOCAL CONSTANTS FOR LAYOUT MANAGEMENT
         int WELCOME_CARD_ROWS = 8;
@@ -90,7 +110,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         //CREATE THE CORE PANEL; custom repaint logic for responsive resize of direct-painted background img
         JPanel welcomePanel = new JPanel(new GridLayout(WELCOME_CARD_ROWS, 1)) {
             //Custom repaint to paint directly to background, allowing responsive resize.
-            //Code ideas as cited in Welcome Button comments
+            //Code ideas as cited in ImgAndButtonUtilities responsive image methods.
             @Override protected void paintComponent (Graphics g) {
                 // Clear background and set-up non-custom aspects of the JPanel
                 // https://docs.oracle.com/javase/tutorial/uiswing/painting/closer.html
@@ -273,6 +293,17 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         return searchButton;
     }
 
+    /**
+     * Collects user input from the filter Panel, validates it, and initiates a search.
+     * <p>Action handler for the main search button.
+     * <p>Validation checks include:
+     * <li>All required filter selections have been made.
+     * <li>Price fields contain valid, non-negative numbers.
+     * <li>Max price exceeds Min price input.
+     * <p>If all checks pass, creates a DreamMenuItem with the user selections and
+     * passes the search request to the registered GuiListener
+     * (currently MenuSearcher, though potentially this scope could expand).
+     */
     private void performSearch() {
 
         //First check that all type-relevant filters had a selection
@@ -299,9 +330,11 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         double minPrice = Double.parseDouble(minPriceRaw);
         double maxPrice = Double.parseDouble(maxPriceRaw);
 
-        if (maxPrice<minPrice) {
+        //Check this explicitly here rather than by calling InputValidators as it's a particular
+        //business rule rather than an objective external standard.
+        if (!(maxPrice>minPrice)) {
             JOptionPane.showMessageDialog(
-                    frame, "Max Price cannot be less than Min Price.", "Price Input Error", JOptionPane.ERROR_MESSAGE);
+                    frame, "Max. Price must be higher than Min. Price.", "Price Input Error", JOptionPane.ERROR_MESSAGE);
             return; //Early terminate the search.
         }
 
@@ -358,7 +391,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         return switch (filter) {
             case TYPE -> selections.selectedType();
             case BUN -> selections.selectedBun();
-            case SAUCE_S -> selections.selectedSauces();
+            case SAUCES -> selections.selectedSauces();
             case DRESSING -> selections.selectedDressing();
             case LEAFY_GREENS -> selections.selectedLeafyGreens();
             case PROTEIN ->  selections.selectedProteins();
@@ -407,6 +440,10 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         }
     }
 
+    /**
+     * Resets the GUI to its initial state after a successful order.
+     * <p>Clears all input fields of various panels and returns to the welcome screen.
+     */
     private void resetForNewOrder() {
         orderCreationPanel.clearFields();
         filterEntryPanel.clearSelections();
@@ -419,22 +456,35 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
      * Helper to switch the current main card JPanel in the GUI.
      * @param cardName String of the card name to display
      */
-    public void switchCard(String cardName) {
+    private void switchCard(String cardName) {
         topCardLayout.show(topCardPanel, cardName);
     }
 
     //              ***LISTENER INTERFACE INTERACTION METHODS***
 
-    public void addGuiListener(GuiListener listener) {
-        this.listeners.add(listener);
-    }
+    /**
+     * Registers a listener (expected MenuSearcher) to be alerted of core user actions that
+     * require processing by model, like searches or order submissions.
+     *
+     * @param listener the GuiListener to add
+     */
+    public void addGuiListener(GuiListener listener) {this.listeners.add(listener);}
 
+    /**
+     * Shows the search results in the ResultsPanel and switches to that view.
+     * @param matches a List of the MenuItems that matched.
+     */
     @Override
     public void onSearchResults(List<MenuItem> matches) {
         resultsPanel.displayItems(matches, "You've matched! Here are your results:");
         switchCard("resultsPanel");
     }
 
+    /**
+     * Switches to the ResultsPanel view.
+     * Informs the user that no matches were found and shows the full menu as a default fallback.
+     * @param fullMenu List of all MenuItems
+     */
     @Override
     public void onNoMatchesFound(List<MenuItem> fullMenu) {
         String title = "Sorry, no matches were found. Here is our full menu:";
@@ -442,6 +492,9 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         switchCard("resultsPanel");
     }
 
+    /**
+     * Clears all selections on the filterEntryPanel, then switches to the that view.
+     */
     @Override
     public void onBackButtonPressed() {
         this.filterEntryPanel.clearSelections();
@@ -449,11 +502,19 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
     }
 
 
+    /**
+     * Sends the user back to the resultsPanel from the order creation view.
+     */
     @Override
     public void onBackToMenuSelection() {
         switchCard("resultsPanel"); //Invoked from personal details panel; goes back to results panel
     }
 
+    /**
+     * Performs final validation checks on the user's name and phone number.
+     * <p>If valid, passes the final Order record to the GuiListener (currently MenuSearcher) for processing.
+     * @param order immutable Order record containing the customer's details and order.
+     */
     @Override
     public void onFinalSubmitOrder(Order order) {
         if (!InputValidators.isFullName(order.name())) {
@@ -474,6 +535,10 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         }
     }
 
+    /**
+     * Shows a Dialog confirming the order success and resets the application for a new order.
+     * @param order Order record of the successful order
+     */
     @Override
     public void onOrderSubmissionSuccess(Order order) {
         JOptionPane.showMessageDialog(
@@ -486,6 +551,11 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
         resetForNewOrder();
     }
 
+    /**
+     * Shows a Dialog informing the user that the order failed with the relevant error message from the source.
+     * <p>Subsequently resets the application for a new order.
+     * @param errorMessage String of the particular error encountered.
+     */
     @Override
     public void onOrderSubmissionFailed(String errorMessage) {
         JOptionPane.showMessageDialog(
@@ -499,7 +569,12 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
     }
 
 
-
+    /**
+     * Used to transition from the ResultsPanel to the OrderCreationPanel.
+     * <p>Passes a List of the MenuItems selected, the cheese preferences identified at the filter view,
+     * and tells OrderCreationPanel to get ready.
+     * @param selectedItems List of selected MenuItems.
+     */
     @Override
     public void onProceedToDetails(List<MenuItem> selectedItems) {
         orderCreationPanel.setCheeseForOrder(this.lastSearchedCheese);
@@ -512,6 +587,7 @@ public class OrderGui implements OrderingSystemListener, ResultsPanelListener, O
 
     /**
      * Public static helper so any relevant class' component can find the preferred GUI size; single source of truth
+     * <p>Not currently used, but so important to extendability and consistency that this is provided.</p>
      * @return copy of the Dimension of the GUI's preferred size
      */
     public static Dimension getGuiPreferredSize() {

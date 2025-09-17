@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.StringJoiner;
 
 /**
  * A public utility class for loading images and making buttons with responsively resized images.
@@ -40,7 +39,7 @@ public final class ImgAndButtonUtilities {
             return placeHolderImage();
         }
 
-        BufferedImage bufferedImage = null;
+        BufferedImage bufferedImage;
         try {
             bufferedImage = ImageIO.read(new File(knownImagePath));
         } catch (IOException e) {

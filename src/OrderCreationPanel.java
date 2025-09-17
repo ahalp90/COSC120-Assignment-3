@@ -7,6 +7,16 @@ import java.text.DecimalFormat;
 import java.util.StringJoiner;
 import java.util.List;
 
+/**
+ * A view panel for order creation and confirmation.
+ * <p>Responsible for:</p>
+ * <li>Displaying a summary of the items selected and total price.</li>
+ * <li>User input of personal details and order customisations</li>
+ * <li>Identifying takeaway/dine-in preference</li>
+ * <li>Showing a detailed summary of all menu items selected, including all ingredient possibilities,
+ * in an extensible side panel</li>
+ * <p>Communicates user actions (submitting order/going back) to listener (i.e. OrderGui).</p>
+ */
 public final class OrderCreationPanel {
 
     private final JPanel corePanel;
@@ -18,7 +28,7 @@ public final class OrderCreationPanel {
     private final JButton submitButton;
     private final JButton backButton;
     private final JTextArea detailsArea;
-    private final JSplitPane splitPane;
+    private final JSplitPane splitPane; //SplitPane for details area user-defined sizing
     private final JLabel detailsHelperLabel;
 
     //CONSTANTS
@@ -30,10 +40,14 @@ public final class OrderCreationPanel {
     private List<MenuItem> orderedItems;
     private String finalCheeseSelection;
 
-    private OrderCreationPanelListener listener;
+    private OrderCreationPanelListener listener; //registered listener
 
+    /**
+     * Creates the order creation and confirmation panel.
+     * Initialises all relevant Components and composes their layout.
+     * Adds action listeners.
+     */
     public OrderCreationPanel() {
-
         //INITIALISE FIELD OBJECTS
         this.corePanel = new JPanel(new BorderLayout());
         this.orderSummaryArea  = new JTextArea(5,30); //5 rows tall, and wide enough for 30 chars.
@@ -47,13 +61,17 @@ public final class OrderCreationPanel {
         this.splitPane = new JSplitPane();
         this.detailsHelperLabel = new JLabel(DETAILS_HELPER_DEFAULT_TEXT);
 
-
         //INSTANTIATE THE CORE PANEL COMPONENTS AND COMPOSE IT.
         createMainComponentsAndComposeCorePanel();
 
-        addListeners();
+        addActionListeners();
     }
 
+    /**
+     * Factory method to create and compose the main layout of the Panel.
+     * <p>Builds the summary, input and button panels, and bundles everything
+     * into a JSplitPane with the item details panel.
+     */
     private void createMainComponentsAndComposeCorePanel() {
         JPanel summaryPanel = createSummaryPanel();
         JPanel inputsPanel = createInputsPanel();
@@ -80,8 +98,8 @@ public final class OrderCreationPanel {
     }
 
     /**
-     * A panel to show the details of items added to the order.
-     * @return Jpanel with JTextArea, scroll and titled border
+     * Factory helper to make a panel to show the details of items added to the order.
+     * @return Jpanel with JTextArea, scroll and helper Label-as-title
      */
     private JPanel createItemDetailsPanel() {
         JPanel panel = new JPanel(new BorderLayout(0,5));
@@ -97,9 +115,15 @@ public final class OrderCreationPanel {
         return panel;
     }
 
+    /**
+     * Sets the text of the helper Label in the item details panel.
+     * <p>Gives context-sensitive advice to the user based on their cheese selection; as cheese selection is
+     * required to be auto-populated to the final order, and this would otherwise be confusing.
+     */
     private void setDetailsHelperLabelText() {
         StringBuilder text = new StringBuilder("<html><i>");
 
+        //NB. IntelliJ is wrong, the toString will not cause NPE as a value is assigned at Filter
         if (Filter.CHEESE.allowsDontMindChoice()
                 && this.finalCheeseSelection.contains(Filter.CHEESE.getDontMindValue().toString())) {
             text.append("You selected <b>")
@@ -113,20 +137,24 @@ public final class OrderCreationPanel {
                     .append("</b><br>");
             text.append("People are serious about their cheese, ")
                     .append("so we've sent yours straight to the order.<br>")
-                    .append("For any other preferences, use the customisations box.");
+                    .append("<b>For any other preferences, use the customisations box.</b>");
         }
 
         text.append("</i></html>");
         this.detailsHelperLabel.setText(text.toString());
     }
 
+    /**
+     * Factory helper to make the top Panel displaying the order summary and total cost.
+     * @return JPanel containing the order summary TextArea
+     */
     private JPanel createSummaryPanel() {
         this.orderSummaryArea.setEditable(false);
         this.orderSummaryArea.setLineWrap(true);
         this.orderSummaryArea.setWrapStyleWord(true);
-        //Set a logical font to allow showing fancy unicode characters:
-        //https://stackoverflow.com/questions/4298279/showing-unicode-character-in-java-text-component
-        this.orderSummaryArea.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        //Font must be monospaced to get perfect column alignment in String formatter:
+        //https://stackoverflow.com/questions/8533612/align-strings-in-columns-in-jtextarea
+        this.orderSummaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
 
         JPanel summaryPanel = new JPanel(new BorderLayout(0,5));
 
@@ -145,6 +173,12 @@ public final class OrderCreationPanel {
         return summaryPanel;
     }
 
+    /**
+     * Factory helper to create the inputs area Panel.
+     * <p>This includes fields for name, phone, takeaway preference and customisations.</p>
+     * <p>Uses GridBagLayout to give proportionate vertical weighting to components</p>
+     * @return Jpanel containing all input Components.
+     */
     private JPanel createInputsPanel() {
         JPanel namePanel = new JPanel(new BorderLayout());
         namePanel.add(new JLabel("<html><b>Full Name:</b></html>"), BorderLayout.WEST);
@@ -207,6 +241,10 @@ public final class OrderCreationPanel {
         return inputsPanel;
     }
 
+    /**
+     * Factory helper to create the sub-panel for the customisations TextArea
+     * @return JPanel containing the customisations TextArea with a Label and ScrollPane
+     */
     private JPanel createCustomisationsArea() {
         JLabel customisationsTitleLabel = new JLabel(
                 "<html><b>Describe any customisations you'd like:</b></html>", SwingConstants.CENTER);
@@ -232,6 +270,10 @@ public final class OrderCreationPanel {
         return customisationsPanel;
     }
 
+    /**
+     * Factory helper that creates the bottom Panel with the "Back" and "Submit my Order" buttons.
+     * @return JPanel with right-aligned buttons in FlowLayout (i.e. non-resizing).
+     */
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
@@ -240,7 +282,12 @@ public final class OrderCreationPanel {
         return buttonPanel;
     }
 
-    private void addListeners() {
+    /**
+     * Sets up the ActionListeners for the "Back" and "Submit my Order" buttons.
+     * <p>These collect data from the form and pass requests on for action to the
+     * registered OrderCreationPanelListener (i.e. OrderGui).
+     */
+    private void addActionListeners() {
         this.backButton.addActionListener(e -> {
             if (listener != null) {
                 listener.onBackToMenuSelection();
@@ -267,6 +314,11 @@ public final class OrderCreationPanel {
         });
     }
 
+    /**
+     * Populates the order summary text area with the selected items and calculates total price.
+     * <p>Stores the list of items internally for later inclusion in the final Order record
+     * @param items the List of MenuItems selected by the user in the preceding view.
+     */
     public void displayOrderSummary(List<MenuItem> items) {
         //STORE THE PASSED-IN ORDER ITEMS TO PASS OUT AT RECORD CREATION
         this.orderedItems = List.copyOf(items);
@@ -288,15 +340,29 @@ public final class OrderCreationPanel {
                 firstChar = "*";
             }
 
-            sj.add(" " + firstChar + " " + item.getMenuItemName() + "\t\t$" + df.format(item.getPrice()));
+            String nameWithIcon = " " + firstChar + " " + item.getMenuItemName();
+            String priceString = "$" + df.format(item.getPrice());
+
+            // Predefine column sizes to ensure the names and prices are always aligned regardless
+            // of item name length. Item name unlikely to exceed 40 chars, though in theory this
+            // could be dynamically set by an initial (separate) iteration through the menu items
+            // Ideas from:
+            // https://stackoverflow.com/questions/26576909/how-to-format-string-output-so-that-columns-are-evenly-centered
+            sj.add(String.format("%-40s %10s", nameWithIcon, priceString));
+
             total += item.getPrice();
         }
-        sj.add("\n Total:\t\t\t$" + df.format(total));
+        sj.add(""); //Blank line separating items from price total
+        sj.add(String.format("%-40s %10s", " Total:", "$" + df.format(total)));
 
         orderSummaryArea.setText(sj.toString());
         orderSummaryArea.setCaretPosition(0); //autoscroll to top
     }
 
+    /**
+     * Populate item details TextArea with full ingredient information for each selected item.
+     * <p>Gives the user a full breakdown of their order and all standard customisation possibilities.
+     */
     public void addItemDetailsToPanel() {
         StringJoiner details = new StringJoiner("\n");
         for (MenuItem item : this.orderedItems) {

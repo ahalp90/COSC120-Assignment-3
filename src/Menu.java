@@ -34,7 +34,7 @@ public final class Menu {
      * @return immutable List of Objects with the relevant values.
      */
     public List<Object> getAllIngredientTypes(Filter filter){
-        List<Object> options = new ArrayList();
+        List<Object> options = new ArrayList<>();
 
         if (filter.hasEnumRepresentingItsValues()) {
             //Intellij's null warning is wrong; this is already guarded by guarantee of hasEnumRepresentingItsValues()

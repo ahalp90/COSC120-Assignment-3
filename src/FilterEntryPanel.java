@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * This class is the main view for filter entry. It creates all the relevant components for filter value input.
  * <p>It is intended to filter for:
- * <li>BURGER ONLY: BUN, SAUCE_S
+ * <li>BURGER ONLY: BUN, SAUCES
  * <li>SALAD ONLY: LEAFY_GREENS, CUCUMBER, DRESSING
  * <li>BOTH: PICKLES, TOMATO, PROTEIN, PRICE, CHEESE
  *
@@ -47,7 +47,7 @@ public final class FilterEntryPanel {
 
         //Burger-only Components
         this.bunSelector = new JComboBox<>(getOptionsOrFail(filterOptions, Filter.BUN).toArray());
-        this.sauceList = new JList<>(getOptionsOrFail(filterOptions, Filter.SAUCE_S).toArray());
+        this.sauceList = new JList<>(getOptionsOrFail(filterOptions, Filter.SAUCES).toArray());
 
         //Salad-only Components
         this.dressingSelector = new JComboBox<>(getOptionsOrFail(filterOptions, Filter.DRESSING).toArray());
@@ -80,6 +80,8 @@ public final class FilterEntryPanel {
 
         //BUILD THE COMPONENTS AND OVERALL LAYOUT
         buildLayout(typeSpecificFilterCardsPanel);
+
+        clearSelections(); //All selectors will default to unselected, or 0.00 for price.
     }
 
 
@@ -231,7 +233,7 @@ public final class FilterEntryPanel {
         JPanel burgerFiltersPanel = new JPanel(new GridLayout(1,2, MAIN_SPLIT_HORIZONTAL_PADDING, 0));
 
         JPanel bunPromptAndSelectorPanel = makeBunPromptAndSelectorPanel();
-        JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCE_S);
+        JPanel saucePromptAndSelectorPanel = makeMultiSelectionPanelWithLabelAndScroll(Filter.SAUCES);
 
         burgerFiltersPanel.add(bunPromptAndSelectorPanel); //LEFT SIDE: buns
         burgerFiltersPanel.add(saucePromptAndSelectorPanel); //RIGHT SIDE: sauces
@@ -317,6 +319,7 @@ public final class FilterEntryPanel {
         JLabel tomatoPromptLabel = new JLabel(Filter.TOMATO.filterPrompt());
         JRadioButton tomatoButton1 = new JRadioButton("Yes");
         JRadioButton tomatoButton2 = new JRadioButton("No");
+        //NB. IntelliJ is wrong, the toString will not cause NPE as a value is assigned at Filter
         JRadioButton tomatoButton3 = new JRadioButton(Filter.TOMATO.getDontMindValue().toString());
         //Register with the tomato ButtonGroup; NB THIS IS THE FIELD TOMATOGROUP
         this.tomatoGroup.add(tomatoButton1);
@@ -368,6 +371,7 @@ public final class FilterEntryPanel {
     private JPanel makeCucumberPromptAndSelectorPanel(){
         JRadioButton cucumberButton1 = new JRadioButton("Yes");
         JRadioButton cucumberButton2 = new JRadioButton("No");
+        //NB. IntelliJ is wrong, the toString will not cause NPE as a value is assigned at Filter
         JRadioButton cucumberButton3 = new JRadioButton(Filter.CUCUMBER.getDontMindValue().toString());
         //Register with the cucumber ButtonGroup; NB THIS IS THE FIELD CUCUMBERGROUP
         this.cucumberGroup.add(cucumberButton1);
@@ -405,7 +409,7 @@ public final class FilterEntryPanel {
         JList<Object> filterSelectors = null;
         switch (filter) {
             case PROTEIN -> filterSelectors = this.proteinList;
-            case SAUCE_S -> filterSelectors = this.sauceList;
+            case SAUCES -> filterSelectors = this.sauceList;
             case LEAFY_GREENS -> filterSelectors = this.leafyGreensList;
             // This should never really happen, but just in case, have a default return empty panel.
             default -> {
@@ -519,7 +523,7 @@ public final class FilterEntryPanel {
         //https://docs.oracle.com/javase/8/docs/api/javax/swing/ListSelectionModel.html
         sauceList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                handleSpecialSelections(sauceList, Filter.SAUCE_S.getDontMindValue());
+                handleSpecialSelections(sauceList, Filter.SAUCES.getDontMindValue());
             }
         });
 
@@ -593,6 +597,7 @@ public final class FilterEntryPanel {
                 dressingSelector.getSelectedItem(),
                 Set.copyOf(leafyGreensList.getSelectedValuesList()),
                 Set.copyOf(proteinList.getSelectedValuesList()),
+                //NB. IntelliJ is wrong, the toString will not cause NPE as a value is assigned at Filter
                 getBooleanSelectionFromGroup(tomatoGroup, Filter.TOMATO.getDontMindValue().toString()),
                 getBooleanSelectionFromGroup(cucumberGroup, Filter.CUCUMBER.getDontMindValue().toString()),
                 pickleCheckBox.isSelected(),
@@ -611,6 +616,8 @@ public final class FilterEntryPanel {
     public String getMissingSelectionsMessage() {
         //Hold the identifiers for missing selectors before appending to return String.
         List<String> missing = new ArrayList<>();
+        //separately identify prices because prompt syntax flows better if these are addressed separately
+        List<String> missingPrices = new ArrayList<>();
 
         //Get the Type selected first for branching panel display/check logic
         Type selectedType =  (Type) itemTypeSelector.getSelectedItem();
@@ -618,6 +625,9 @@ public final class FilterEntryPanel {
         if (selectedType == null) missing.add(Filter.TYPE.toString());
 
         //GENERAL FILTERS
+        if (priceMinField.getText().isBlank()) missingPrices.add("Min. Price");
+        if (priceMaxField.getText().isBlank()) missingPrices.add("Max. Price");
+
         if (proteinList.getSelectedValuesList().isEmpty()) missing.add(Filter.PROTEIN.toString());
         if (getSelectedButtonText(tomatoGroup) == null) missing.add(Filter.TOMATO.toString());
         if (cheeseSelector.getSelectedItem() == null) missing.add(Filter.CHEESE.toString());
@@ -625,7 +635,7 @@ public final class FilterEntryPanel {
 
         //TYPE-SPECIFIC FILTERS
         if (selectedType == Type.BURGER) {
-            if (sauceList.getSelectedValuesList().isEmpty()) missing.add(Filter.SAUCE_S.toString());
+            if (sauceList.getSelectedValuesList().isEmpty()) missing.add(Filter.SAUCES.toString());
             if (bunSelector.getSelectedItem() == null) missing.add(Filter.BUN.toString());
         } else if (selectedType == Type.SALAD) {
             if (leafyGreensList.getSelectedValuesList().isEmpty()) missing.add(Filter.LEAFY_GREENS.toString());
@@ -633,13 +643,36 @@ public final class FilterEntryPanel {
             if (dressingSelector.getSelectedItem() == null) missing.add(Filter.DRESSING.toString());
         }
 
-        if (missing.isEmpty()) return ""; //Return empty String if all relevant selectors had selections.
+        //Return empty String if all relevant selectors had selections.
+        if (missing.isEmpty() && missingPrices.isEmpty()) return "";
 
-        // If selectors were missing selections
-        return "Please make a selection for: " + String.join(", ", missing) +
-                "\n\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
-                +"\nor '" +SpecialChoice.NONE + "' if you know you don't want this item in your food.";
+        StringJoiner missingSelections = new StringJoiner(", ");
 
+        if (!missing.isEmpty()) {
+            for (String s : missing) {
+                missingSelections.add(s);
+            }
+        }
+        if (!missingPrices.isEmpty()) {
+            for (String s : missingPrices) {
+                missingSelections.add(s);
+            }
+        }
+
+        StringJoiner missingMessage = new StringJoiner("\n","Please make a selection for: ", "");
+        missingMessage.add(missingSelections.toString());
+
+        if (!missing.isEmpty()) {
+            missingMessage.add("\nYou can select '" + SpecialChoice.I_DONT_MIND + "' if you have no preference, "
+                    + "\nor '" + SpecialChoice.NONE + "' if you know you don't want this item in your food.");
+        }
+
+        if (!missingPrices.isEmpty()) {
+            missingMessage.add("\nIf you just want to skip filtering on price, set your Min. Price to 0 and "
+                    +"your Max. Price to 1000--we promise, cost of living isn't that bad!");
+        }
+
+        return  missingMessage.toString();
     }
 
     //                                  *** PUBLIC SETTERS ***

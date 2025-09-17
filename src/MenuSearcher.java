@@ -222,7 +222,7 @@ public final class MenuSearcher implements GuiListener {
                 filterMap.put(Filter.BUN, bun);
                 //only add the sauces set if it's not empty--otherwise it's meaningless;
                 //currently all burgers have sauce, but a burger without sauce is conceivable
-                if(!sauces.isEmpty()) filterMap.put(Filter.SAUCE_S,Set.copyOf(sauces));
+                if(!sauces.isEmpty()) filterMap.put(Filter.SAUCES,Set.copyOf(sauces));
             }
 
             if(type.equals(Type.SALAD)){
@@ -435,7 +435,7 @@ public final class MenuSearcher implements GuiListener {
         if (!matching.isEmpty()) {
             notifyListenersOnSearchResults(matching);
         } else {
-            notifyListenersOnNoMatchesFound(dreamMenuItem);
+            notifyListenersOnNoMatchesFound();
         }
     }
 
@@ -452,10 +452,8 @@ public final class MenuSearcher implements GuiListener {
     /**
      * Notifies all registered listeners that no matches were found for a search.
      * <p>Provides the full menu as a default option.
-     *
-     * @param dreamMenuItem DreamMenuItem of the user's search criteria that did not match.
      */
-    private void notifyListenersOnNoMatchesFound(DreamMenuItem dreamMenuItem) {
+    private void notifyListenersOnNoMatchesFound() {
         for (OrderingSystemListener listener : listeners) {
             listener.onNoMatchesFound(this.getAllMenuItems());
         }

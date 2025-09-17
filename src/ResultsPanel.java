@@ -3,7 +3,14 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ResultsPanel {
+/**
+ * Panel showing the results screen.
+ * <p>Shows a scrollable list of MenuItemPanels that match the user's search criteria,
+ * or the full menu if no matches were found.
+ * <p>Allows the user to select >=1 items via checkboxes and then proceed to the order creation view
+ * or return to the search view.
+ */
+public final class ResultsPanel {
     private final JPanel corePanel;
     private final JLabel titleLabel;
     private final JPanel itemsListPanel;
@@ -15,6 +22,10 @@ public class ResultsPanel {
     //Store the MenuItemPanels to display.
     private final List<MenuItemPanel> menuItemPanels = new ArrayList<>();
 
+    /**
+     * Constructor for the search results panel.
+     * <p>Initialises all GUI components and composes final layout.
+     */
     public ResultsPanel(){
         corePanel = new JPanel(new BorderLayout(10,10));
         corePanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
@@ -42,28 +53,50 @@ public class ResultsPanel {
         corePanel.add(scrollPane, BorderLayout.CENTER);
         corePanel.add(bottomButtonPanel, BorderLayout.SOUTH);
 
-        addListeners();
+        addActionListeners();
     }
 
-    private void addListeners() {
+    /**
+     * Sets up ActionListeners for the "Back to Search" and "Confirm Selection" buttons.
+     * <p>These listeners delegate decisions about the specific response to the
+     * registered ResultsPanelListener (i.e. OrderGui)
+     */
+    private void addActionListeners() {
+
         backButton.addActionListener(e -> {
-            if (listener != null) {listener.onBackButtonPressed();}
+            //Don't handle this, just do a noisy crash to facilitate debugging
+            if (listener==null) throw new IllegalStateException("Listener is null; results panel buttons cannot function.");
+
+            listener.onBackButtonPressed();
         });
 
         proceedButton.addActionListener(e -> {
+            //Don't handle this, just do a noisy crash to facilitate debugging
+            if (listener==null) throw new IllegalStateException("Listener is null; results panel buttons cannot function.");
+
             List<MenuItem> selectedItems = getSelectedItems();
+            //show dialog indicating no selection
             if (selectedItems.isEmpty()) {
                 JOptionPane.showMessageDialog(
                         corePanel,
                         "Please select at least one item to add to your order.",
                         "No Items Selected",
                         JOptionPane.WARNING_MESSAGE);
-            } else if (listener != null) {
+            } else {
+                //go to next view
                 listener.onProceedToDetails(selectedItems);
             }
         });
     }
 
+    /**
+     * Clears any previous search results and shows a new list of MenuItems.
+     * <p>Creates a new MenuItemPanel for each item in the provided List and adds it to the scrollable view.
+     * <p>Also updates the title of the panel to indicate search matches/lack thereof.
+     * <p>After adding the new components, repaints and revalidates to ensure correct UI display and proportions.
+     * @param items List of MenuItems to display
+     * @param title String of the title text
+     */
     public void displayItems(List<MenuItem> items, String title) {
         //CLEAR ANY ITEMS FROM A PREVIOUS SEARCH
         itemsListPanel.removeAll();
@@ -86,10 +119,14 @@ public class ResultsPanel {
         this.corePanel.repaint();
     }
 
+    /**
+     * Getter for the main Panel containing all Components
+     * @return core JPanel for this view
+     */
     public JPanel getCorePanel() {return this.corePanel;}
 
     /**
-     * Set the listener that will handle this Panel's events
+     * Register the listener that will handle this Panel's events and data
      * <p>This panel uses a single listener because it's designed to send events directly back to its parent container
      * @param listener ResultsPanelListener interface, though ultimately it's the OrderGui listening.
      */
@@ -97,6 +134,10 @@ public class ResultsPanel {
         this.listener = listener;
     }
 
+    /**
+     * Scan all displayed MenuItemPanels and return a List of those selected.
+     * @return List of MenuItems selected by the user; List will be empty if none are selected.
+     */
     private List<MenuItem> getSelectedItems() {
         List<MenuItem> selected = new ArrayList<>();
         for (MenuItemPanel panel : menuItemPanels) {

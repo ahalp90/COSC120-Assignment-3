@@ -1,14 +1,15 @@
 import java.util.List;
 
+/**
+ * Identifies the menu filtering categories read in from the source inventory file and to be used in UI filtering.
+ * This is a Smart enum.
+ * It centralises business logic and methods around expected properties attached to its values.
+ *<p>
+ * Original values by Dr Andreas Shepley for COSC120 on 25/04/2025.
+ * Smart Enum functionality added by Ariel Halperin.
+ */
 public enum Filter {
-    /**
-     * Identifes the menu filtering categories read in from the source inventory file and to be used in UI filtering.
-     * This is a Smart enum.
-     * It centralises business logic and methods around expected properties attached to its values.
-     *
-     * Original values by Dr Andreas Shepley for COSC120 on 25/04/2025.
-     * Smart Enum functionality added by Ariel Halperin.
-     */
+
     TYPE(Type.class),
     BUN(null),
     PROTEIN(Protein.class),
@@ -18,7 +19,7 @@ public enum Filter {
     TOMATO(null),
     DRESSING(Dressing.class),
     LEAFY_GREENS(null),
-    SAUCE_S(Sauce.class);
+    SAUCES(Sauce.class);
 
     /**
      * This field holds the reference to the public enum relevant to this Filter
@@ -65,7 +66,7 @@ public enum Filter {
             case TOMATO -> "Tomato";
             case DRESSING -> "Salad dressing";
             case LEAFY_GREENS -> "Leafy greens";
-            case SAUCE_S -> "Sauces";
+            case SAUCES -> "Sauces";
         };
     }
 
@@ -85,12 +86,13 @@ public enum Filter {
             case TOMATO -> "<html><b>Tomato?</b></html>";
             case DRESSING -> "<html><b>Salad dressing?</b></html>";
             case LEAFY_GREENS -> "<html><b>Leafy greens?</b> <i>(hold ctrl to select >1)</i></html>";
-            case SAUCE_S -> "<html><b>Sauces?</b> <i>(hold ctrl to select >1)</i></html>";
+            case SAUCES -> "<html><b>Sauces?</b> <i>(hold ctrl to select >1)</i></html>";
         };
     }
 
     /**
      * Identifies filter values that allow multiple selections
+     * <p>NB THIS IS NOT CURRENTLY USED, BUT ITS NECESSITY IS EXTREMELY LIKELY IN FUTURE SO HAS BEEN ADDED FOR MAINTAINABILITY</p>
      * @return true if Filter value allows multiple selections.
      */
     public boolean allowsMultipleChoices() {
@@ -104,7 +106,7 @@ public enum Filter {
             case TOMATO -> false;
             case DRESSING -> false;
             case LEAFY_GREENS -> true;
-            case SAUCE_S -> true;
+            case SAUCES -> true;
         };
     }
 
@@ -123,7 +125,7 @@ public enum Filter {
             case TOMATO -> false;
             case DRESSING -> false;
             case LEAFY_GREENS -> true;
-            case SAUCE_S -> true;
+            case SAUCES -> true;
         };
     }
 
@@ -142,7 +144,7 @@ public enum Filter {
             case TOMATO -> true;
             case DRESSING -> true;
             case LEAFY_GREENS -> true;
-            case SAUCE_S -> true;
+            case SAUCES -> true;
         };
     }
 
@@ -156,7 +158,7 @@ public enum Filter {
         return switch (this) {
             case DRESSING -> Dressing.NA;
             case PROTEIN -> Protein.NA;
-            case SAUCE_S -> Sauce.NA;
+            case SAUCES -> Sauce.NA;
             case BUN, CHEESE, LEAFY_GREENS, TOMATO, CUCUMBER -> SpecialChoice.I_DONT_MIND;
             default -> null;
         };
@@ -168,7 +170,7 @@ public enum Filter {
      */
     public boolean hasDontMindValueDefinedInOwnEnum() {
         return switch (this) {
-            case DRESSING, PROTEIN, SAUCE_S -> true;
+            case DRESSING, PROTEIN, SAUCES -> true;
             default -> false;
         };
     }
@@ -184,7 +186,7 @@ public enum Filter {
             case CUCUMBER -> 3;
             case TOMATO -> 4;
             case BUN -> 5;
-            case SAUCE_S -> 6;
+            case SAUCES -> 6;
             case DRESSING -> 7;
             case CHEESE -> 8;
             case PROTEIN -> 9;
@@ -220,7 +222,7 @@ public enum Filter {
      */
     public boolean isRelevantForBurger() {
         return switch (this){
-            case TYPE,BUN,PROTEIN,CHEESE,PICKLES,TOMATO,SAUCE_S -> true;
+            case TYPE, BUN, PROTEIN, CHEESE, PICKLES, TOMATO, SAUCES -> true;
             default -> false;
         };
     }
