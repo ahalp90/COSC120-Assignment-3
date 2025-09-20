@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class MenuItemPanel {
+public final class MenuItemPanel {
     private final JPanel corePanel;
     private final JCheckBox checkBox;
     private final MenuItem menuItem;
@@ -32,7 +32,7 @@ public class MenuItemPanel {
         imageLabel.setPreferredSize(IMG_THUMBNAIL_DIMENSION);
         BufferedImage originalImg =
                 ImgAndButtonUtilities.loadBufferedImage(
-                        "images/" + this.menuItem.getMenuItemIdentifier() + ".png"
+                        "./" + this.menuItem.getMenuItemIdentifier() + ".png"
                         );
         Image scaledImg = originalImg.getScaledInstance(
                 IMG_THUMBNAIL_DIMENSION.width, IMG_THUMBNAIL_DIMENSION.height, Image.SCALE_FAST);
